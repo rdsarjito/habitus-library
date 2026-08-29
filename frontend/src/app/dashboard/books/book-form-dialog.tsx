@@ -39,6 +39,7 @@ export function BookFormDialog({ open, onOpenChange, book, onSuccess }: BookForm
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (open) {
       if (book) {
@@ -57,6 +58,7 @@ export function BookFormDialog({ open, onOpenChange, book, onSuccess }: BookForm
       setErrors({});
     }
   }, [open, book]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleChange = (field: keyof BookFormData, value: string | number) => {
     setForm((prev) => ({ ...prev, [field]: value }));

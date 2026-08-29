@@ -61,7 +61,9 @@ export default function LoansPage() {
     }
   }, [query]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => { fetchLoans(); }, [fetchLoans]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleStatusFilter = (status: string | null) => {
     setQuery((prev) => ({

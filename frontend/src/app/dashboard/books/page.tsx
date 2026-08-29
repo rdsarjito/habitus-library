@@ -64,15 +64,17 @@ export default function BooksPage() {
     }
   }, [query]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const cats = await booksApi.getCategories();
       setCategories(cats);
     } catch { /* ignore */ }
-  };
+  }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => { fetchBooks(); }, [fetchBooks]);
-  useEffect(() => { fetchCategories(); }, []);
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

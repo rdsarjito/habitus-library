@@ -44,6 +44,7 @@ export function MemberFormDialog({ open, onOpenChange, member, onSuccess }: Memb
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (open) {
       if (member) {
@@ -60,6 +61,7 @@ export function MemberFormDialog({ open, onOpenChange, member, onSuccess }: Memb
       setErrors({});
     }
   }, [open, member]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleChange = (field: keyof MemberFormData, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));

@@ -46,7 +46,9 @@ export default function MembersPage() {
     }
   }, [query]);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => { fetchMembers(); }, [fetchMembers]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

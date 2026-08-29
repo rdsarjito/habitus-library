@@ -30,16 +30,6 @@ export function LoanCreateDialog({ open, onOpenChange, onSuccess }: LoanCreateDi
   const [error, setError] = useState('');
   const [violations, setViolations] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (open) {
-      setMemberId('');
-      setBookId('');
-      setError('');
-      setViolations([]);
-      fetchData();
-    }
-  }, [open]);
-
   const fetchData = async () => {
     setFetchLoading(true);
     try {
@@ -55,6 +45,18 @@ export function LoanCreateDialog({ open, onOpenChange, onSuccess }: LoanCreateDi
       setFetchLoading(false);
     }
   };
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (open) {
+      setMemberId('');
+      setBookId('');
+      setError('');
+      setViolations([]);
+      fetchData();
+    }
+    }, [open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

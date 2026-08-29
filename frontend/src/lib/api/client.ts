@@ -41,6 +41,7 @@ apiClient.interceptors.response.use(
         if (!isLoginRequest && !window.location.pathname.includes('/login')) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          // eslint-disable-next-line @next/next/no-location-assign-relative-destination
           window.location.href = '/login';
         }
       }

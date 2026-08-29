@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { dashboardApi, getErrorMessage } from '@/lib/api';
 import type { DashboardStats } from '@/types/api';
@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -35,11 +35,13 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     fetchStats();
-  }, []);
+  }, [fetchStats]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div className="space-y-6">

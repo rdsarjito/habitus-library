@@ -1,5 +1,5 @@
 # ── Stage 1: Build ──
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ COPY package.json package-lock.json ./
 COPY prisma ./prisma/
 
 # Install all dependencies (including devDependencies for build)
-RUN npm ci
+RUN npm install
 
 # Generate Prisma Client
 RUN npx prisma generate
@@ -20,20 +20,23 @@ COPY src ./src/
 # Compile TypeScript
 RUN npm run build
 
+# Prune dev dependencies after build
+RUN npm prune --omit=dev
+
 # ── Stage 2: Production ──
-FROM node:22-alpine AS runner
+FROM node:24-alpine AS runner
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Copy package files and install production dependencies only
-COPY package.json package-lock.json ./
+# Copy production node_modules from builder (no reinstall needed)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
 COPY prisma ./prisma/
 
-RUN npm ci --omit=dev && \
-    npx prisma generate && \
-    npm cache clean --force
+# Re-generate Prisma Client for this platform
+RUN npx prisma generate
 
 # Copy compiled code from builder
 COPY --from=builder /app/dist ./dist/

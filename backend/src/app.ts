@@ -2,9 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
 import env from './config/env';
 import routes from './routes';
 import { errorHandler } from './middlewares/error.middleware';
+import openApiSpec from './docs/openapi';
 
 const app = express();
 
@@ -30,6 +32,14 @@ app.get('/api/health', (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// =====================
+// API Documentation
+// =====================
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Library API Documentation',
+}));
 
 // =====================
 // API Routes (v1)

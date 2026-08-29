@@ -184,6 +184,8 @@ The server starts at `http://localhost:3001`. Verify with:
 curl http://localhost:3001/api/health
 ```
 
+API documentation (Swagger UI) is available at `http://localhost:3001/api/docs`.
+
 ### 5. Setup Frontend
 
 Open a new terminal:
@@ -369,7 +371,6 @@ This ensures status is always accurate without requiring scheduled jobs.
 
 The following items are not yet implemented:
 
-- **API Documentation**: Swagger UI / OpenAPI docs are not set up (dependencies are installed but not configured)
 - **Unit Tests**: Vitest is installed and configured but no test files have been written yet
 - **Docker**: No Dockerfile or docker-compose.yml for containerized deployment
 - **CI/CD**: No GitHub Actions or other CI pipeline configured

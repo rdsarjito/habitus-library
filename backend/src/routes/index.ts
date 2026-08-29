@@ -1,16 +1,18 @@
 import { Router } from 'express';
+import authRoutes from './auth.routes';
 import bookRoutes from './book.routes';
 import memberRoutes from './member.routes';
 import loanRoutes from './loan.routes';
+import dashboardRoutes from './dashboard.routes';
 
 const router = Router();
 
-// Resource routes
+// Routes
+router.use('/auth', authRoutes);
 router.use('/books', bookRoutes);
 router.use('/members', memberRoutes);
 router.use('/loans', loanRoutes);
-// router.use('/auth', authRoutes);         // Phase 6
-// router.use('/dashboard', dashRoutes);    // Phase 6
+router.use('/dashboard', dashboardRoutes);
 
 // API info
 router.get('/', (_req, res) => {

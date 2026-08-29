@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema, ZodError } from 'zod';
+import { ZodSchema } from 'zod';
+import { ParamsDictionary } from 'express-serve-static-core';
 
 interface ValidateSchemas {
   body?: ZodSchema;
@@ -9,62 +10,61 @@ interface ValidateSchemas {
 
 /**
  * Generic validation middleware factory.
- * Usage: router.post('/', validate({ body: createBookSchema }), controller.create)
+ * Validates and transforms request data using Zod schemas.
+ * Parsed query values are stored in res.locals.query to avoid Express getter conflicts.
  */
 export function validate(schemas: ValidateSchemas) {
-  return (req: Request, _res: Response, next: NextFunction): void => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const errors: { code: string; field: string; message: string }[] = [];
 
-    try {
-      if (schemas.params) {
-        req.params = schemas.params.parse(req.params);
-      }
-    } catch (err) {
-      if (err instanceof ZodError) {
-        errors.push(
-          ...err.errors.map((e) => ({
+    if (schemas.params) {
+      const result = schemas.params.safeParse(req.params);
+      if (!result.success) {
+        result.error.issues.forEach((issue) => {
+          errors.push({
             code: 'VALIDATION_ERROR',
-            field: `params.${e.path.join('.')}`,
-            message: e.message,
-          }))
-        );
+            field: `params.${issue.path.join('.')}`,
+            message: issue.message,
+          });
+        });
+      } else {
+        req.params = result.data as ParamsDictionary;
       }
     }
 
-    try {
-      if (schemas.query) {
-        req.query = schemas.query.parse(req.query);
-      }
-    } catch (err) {
-      if (err instanceof ZodError) {
-        errors.push(
-          ...err.errors.map((e) => ({
+    if (schemas.query) {
+      const result = schemas.query.safeParse(req.query);
+      if (!result.success) {
+        result.error.issues.forEach((issue) => {
+          errors.push({
             code: 'VALIDATION_ERROR',
-            field: `query.${e.path.join('.')}`,
-            message: e.message,
-          }))
-        );
+            field: `query.${issue.path.join('.')}`,
+            message: issue.message,
+          });
+        });
+      } else {
+        // Store parsed query in res.locals to avoid Express 5 getter-only issue
+        res.locals.parsedQuery = result.data;
       }
     }
 
-    try {
-      if (schemas.body) {
-        req.body = schemas.body.parse(req.body);
-      }
-    } catch (err) {
-      if (err instanceof ZodError) {
-        errors.push(
-          ...err.errors.map((e) => ({
+    if (schemas.body) {
+      const result = schemas.body.safeParse(req.body);
+      if (!result.success) {
+        result.error.issues.forEach((issue) => {
+          errors.push({
             code: 'VALIDATION_ERROR',
-            field: e.path.join('.'),
-            message: e.message,
-          }))
-        );
+            field: issue.path.join('.'),
+            message: issue.message,
+          });
+        });
+      } else {
+        req.body = result.data;
       }
     }
 
     if (errors.length > 0) {
-      _res.status(422).json({
+      res.status(422).json({
         success: false,
         message: 'Validasi gagal',
         errors,

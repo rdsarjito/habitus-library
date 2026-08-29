@@ -1,15 +1,17 @@
 import { Router } from 'express';
+import bookRoutes from './book.routes';
+import memberRoutes from './member.routes';
 
 const router = Router();
 
-// Routes will be added in subsequent phases:
-// router.use('/auth', authRoutes);       // Phase 6
-// router.use('/books', bookRoutes);       // Phase 4
-// router.use('/members', memberRoutes);   // Phase 4
+// Resource routes
+router.use('/books', bookRoutes);
+router.use('/members', memberRoutes);
 // router.use('/loans', loanRoutes);       // Phase 5
-// router.use('/dashboard', dashRoutes);   // Phase 6
+// router.use('/auth', authRoutes);         // Phase 6
+// router.use('/dashboard', dashRoutes);    // Phase 6
 
-// Placeholder: API info
+// API info
 router.get('/', (_req, res) => {
   res.json({
     success: true,

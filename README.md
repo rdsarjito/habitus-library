@@ -367,12 +367,92 @@ This ensures status is always accurate without requiring scheduled jobs.
 
 7. **Configurable business rules** — Key values like max loans (3), loan duration (14 days), and fine per day (Rp 1,000) are configurable via environment variables, not hardcoded.
 
+## Running with Docker
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) >= 20.10
+- [Docker Compose](https://docs.docker.com/compose/install/) >= 2.0
+
+### Quick Start
+
+```bash
+# Clone and enter the project
+git clone https://github.com/rdsarjito/habitus-library.git
+cd habitus-library
+
+# Copy environment file
+cp .env.example .env
+
+# Build and start all services
+docker compose up --build
+```
+
+This starts 3 services:
+- **PostgreSQL** at `localhost:5432`
+- **Backend API** at `http://localhost:3001`
+- **Frontend** at `http://localhost:3000`
+
+On first startup, the backend automatically runs database migrations and seeds sample data.
+
+Login with: **admin** / **admin123**
+
+### Useful Commands
+
+| Command | Description |
+|---------|-------------|
+| `docker compose up --build` | Build and start all services |
+| `docker compose up -d` | Start in background (detached) |
+| `docker compose down` | Stop all services |
+| `docker compose down -v` | Stop and remove database volume (reset data) |
+| `docker compose logs -f backend` | Follow backend logs |
+| `docker compose logs -f db` | Follow database logs |
+| `docker compose ps` | Show running containers |
+
+### Environment Configuration
+
+Copy `.env.example` to `.env` and edit as needed:
+
+```bash
+cp .env.example .env
+```
+
+Key variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `POSTGRES_USER` | `library_user` | PostgreSQL username |
+| `POSTGRES_PASSWORD` | `library_pass` | PostgreSQL password |
+| `POSTGRES_DB` | `library_db` | Database name |
+| `JWT_SECRET` | `change-me-in-production-min10` | JWT signing secret |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:3001/api/v1` | API URL for frontend |
+
+> **Note:** For production, always change `POSTGRES_PASSWORD` and `JWT_SECRET` to strong, unique values.
+
+### Troubleshooting
+
+**Backend fails to connect to database:**
+The backend waits for PostgreSQL to be healthy before starting. If it still fails, try:
+```bash
+docker compose down -v
+docker compose up --build
+```
+
+**Database is empty after restart:**
+Data is persisted in a Docker volume (`pgdata`). If you ran `docker compose down -v`, the volume was removed. Run `docker compose up` again to re-seed.
+
+**Port conflict (3000 or 3001 already in use):**
+Stop any local dev servers, or change the port mapping in `docker-compose.yml`:
+```yaml
+ports:
+  - "3002:3001"  # Map to different host port
+```
+
 ## Known Limitations
 
 The following items are not yet implemented:
 
 - **Unit Tests**: Only loan service and date utility tests are implemented (30 tests). Integration tests and other service tests are not yet written
-- **Docker**: No Dockerfile or docker-compose.yml for containerized deployment
 - **CI/CD**: No GitHub Actions or other CI pipeline configured
 - **Deployment**: The application runs locally only; no production deployment
 - **Mobile responsiveness**: The dashboard layout uses a fixed sidebar that is not optimized for mobile screen sizes

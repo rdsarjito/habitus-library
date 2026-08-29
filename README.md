@@ -371,7 +371,7 @@ This ensures status is always accurate without requiring scheduled jobs.
 
 The following items are not yet implemented:
 
-- **Unit Tests**: Vitest is installed and configured but no test files have been written yet
+- **Unit Tests**: Only loan service and date utility tests are implemented (30 tests). Integration tests and other service tests are not yet written
 - **Docker**: No Dockerfile or docker-compose.yml for containerized deployment
 - **CI/CD**: No GitHub Actions or other CI pipeline configured
 - **Deployment**: The application runs locally only; no production deployment

@@ -473,8 +473,20 @@ Internet → Cloudflare (HTTPS) → Cloudflare Tunnel → Caddy (reverse proxy)
 
 ### CI/CD
 
-- **CI**: GitHub Actions runs lint, type check, unit tests, and build on every push to `main`
-- **CD**: Self-hosted GitHub Actions runner on the server auto-deploys after CI passes
+Every push to `main` triggers the full pipeline automatically:
+
+```
+git push → GitHub Actions CI → Pass? → Self-hosted Runner → Deploy
+```
+
+| Stage | Jobs |
+|-------|------|
+| **CI** | Lint, Type Check, Unit Tests (30 tests), Build |
+| **CD** | `git pull` + `docker compose up --build` on server |
+
+- **CI** runs on GitHub-hosted runners (Node 24)
+- **CD** runs on a self-hosted runner on the laptop server (auto-starts after reboot)
+- Deploy only triggers on `push` to `main` (not on pull requests)
 
 ### Deploy Manually
 

@@ -1,5 +1,9 @@
 # 📚 Library Management System
 
+> **🔗 Live Demo:** [habitus.ramadhaninursarjito.tech](https://habitus.ramadhaninursarjito.tech) — Login: `admin` / `admin123`
+> 
+> **📡 API Health:** [habitus-api.ramadhaninursarjito.tech/api/health](https://habitus-api.ramadhaninursarjito.tech/api/health)
+
 A full-stack web application for managing library books, members, and loan transactions. Built as a take-home assessment project demonstrating clean architecture, business logic implementation, and modern web development practices.
 
 ## Features
@@ -448,12 +452,43 @@ ports:
   - "3002:3001"  # Map to different host port
 ```
 
+## Production Deployment
+
+The application is deployed on a self-hosted Linux server using Docker, accessible via Cloudflare Tunnel.
+
+| Component | URL | Stack |
+|-----------|-----|-------|
+| **Frontend** | [habitus.ramadhaninursarjito.tech](https://habitus.ramadhaninursarjito.tech) | Next.js 16 (standalone) |
+| **Backend API** | [habitus-api.ramadhaninursarjito.tech](https://habitus-api.ramadhaninursarjito.tech) | Express 5 + Prisma |
+| **Database** | Internal only | PostgreSQL 16 |
+
+### Architecture
+
+```
+Internet → Cloudflare (HTTPS) → Cloudflare Tunnel → Caddy (reverse proxy)
+                                                      ├─ habitus-frontend:3000
+                                                      └─ habitus-backend:3001
+                                                              └─ habitus-db:5432
+```
+
+### CI/CD
+
+- **CI**: GitHub Actions runs lint, type check, unit tests, and build on every push to `main`
+- **CD**: Self-hosted GitHub Actions runner on the server auto-deploys after CI passes
+
+### Deploy Manually
+
+```bash
+cd ~/habitus-dev
+git pull origin main
+docker compose -f docker-compose.prod.yml --env-file backend/.env up -d --build
+```
+
 ## Known Limitations
 
 The following items are not yet implemented:
 
 - **Unit Tests**: Only loan service and date utility tests are implemented (30 tests). Integration tests and other service tests are not yet written
-- **Deployment**: The application runs locally only; no production deployment
 - **Mobile responsiveness**: The dashboard layout uses a fixed sidebar that is not optimized for mobile screen sizes
 - **Search debounce**: Search uses a submit button rather than real-time debounce on keystroke
 - **Soft delete**: Books and members use hard delete (with foreign key protection) rather than soft delete

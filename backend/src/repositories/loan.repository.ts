@@ -1,4 +1,4 @@
-import { Prisma, LoanStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import prisma from '../config/database';
 import { PaginationParams } from '../utils/pagination';
 

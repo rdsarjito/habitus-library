@@ -453,7 +453,6 @@ ports:
 The following items are not yet implemented:
 
 - **Unit Tests**: Only loan service and date utility tests are implemented (30 tests). Integration tests and other service tests are not yet written
-- **CI/CD**: No GitHub Actions or other CI pipeline configured
 - **Deployment**: The application runs locally only; no production deployment
 - **Mobile responsiveness**: The dashboard layout uses a fixed sidebar that is not optimized for mobile screen sizes
 - **Search debounce**: Search uses a submit button rather than real-time debounce on keystroke

@@ -79,18 +79,3 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
 
-  # ── Deploy (hanya saat push ke main, setelah CI pass) ────────────────────
-  deploy:
-    name: Deploy
-    runs-on: self-hosted
-    needs: [backend-ci, frontend-ci]
-    # Hanya deploy saat push ke main (bukan saat pull_request)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Pull & rebuild
-        run: |
-          cd ~/habitus-dev
-          git pull origin main
-          docker compose -f docker-compose.prod.yml --env-file backend/.env up -d --build
-          docker image prune -f

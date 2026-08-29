@@ -1,6 +1,6 @@
 # 📚 Library Management System
 
-> **🔗 Live Demo:** [habitus.ramadhaninursarjito.tech](https://habitus.ramadhaninursarjito.tech) — Login: `admin` / `admin123`
+> **🔗 Live Demo:** [habitus.ramadhaninursarjito.tech](https://habitus.ramadhaninursarjito.tech) — Login: `admin` / `admin123` | CI/CD ✅
 > 
 > **📡 API Health:** [habitus-api.ramadhaninursarjito.tech/api/health](https://habitus-api.ramadhaninursarjito.tech/api/health)
 

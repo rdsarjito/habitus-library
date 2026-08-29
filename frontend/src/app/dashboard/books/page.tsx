@@ -108,7 +108,7 @@ export default function BooksPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Daftar Buku</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Daftar Buku Test</h1>
           <p className="mt-1 text-slate-500">Kelola koleksi buku perpustakaan</p>
         </div>
         <Button onClick={openCreate} className="gap-2">

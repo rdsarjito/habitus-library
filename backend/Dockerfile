@@ -38,6 +38,10 @@ RUN npm ci --omit=dev && \
 # Copy compiled code from builder
 COPY --from=builder /app/dist ./dist/
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
 # Non-root user for security
 RUN addgroup -g 1001 -S appgroup && \
     adduser -S appuser -u 1001 -G appgroup && \

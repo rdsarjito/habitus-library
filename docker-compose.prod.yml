@@ -1,0 +1,77 @@
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  # Tidak diekspos ke host. Hanya diakses internal oleh backend.
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-habitus_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD wajib diset di .env}
+      POSTGRES_DB: ${POSTGRES_DB:-habitus_db}
+    expose:
+      - "5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-habitus_user} -d ${POSTGRES_DB:-habitus_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend (Express + Prisma) ──────────────────────────────────────────────
+  # Akses backend hanya lewat Caddy edge (reverse proxy).
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: habitus-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-habitus_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-habitus_db}
+      NODE_ENV: production
+      PORT: "3001"
+    entrypoint: ["./docker-entrypoint.sh"]
+    expose:
+      - "3001"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      default: {}
+      edge:
+        aliases:
+          - habitus-backend
+
+  # ── Frontend (Next.js standalone) ──────────────────────────────────────────
+  # NEXT_PUBLIC_* di-bake saat build -> diteruskan sebagai build args.
+  # Akses frontend hanya lewat Caddy edge (reverse proxy).
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.habitus.ramadhaninursarjito.tech/api/v1}
+    container_name: habitus-frontend
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      NODE_ENV: production
+    expose:
+      - "3000"
+    depends_on:
+      - backend
+    networks:
+      default: {}
+      edge:
+        aliases:
+          - habitus-frontend
+
+volumes:
+  pgdata:
+
+# Network bersama lintas-stack. Buat sekali di server: docker network create edge
+networks:
+  edge:
+    external: true

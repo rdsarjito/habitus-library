@@ -61,3 +61,7 @@ docker-compose.override.yml
 *.tsbuildinfo
 .vercel
 .turbo
+
+# Next.js AI agent files
+AGENTS.md
+CLAUDE.md

@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import bookRoutes from './book.routes';
 import memberRoutes from './member.routes';
+import loanRoutes from './loan.routes';
 
 const router = Router();
 
 // Resource routes
 router.use('/books', bookRoutes);
 router.use('/members', memberRoutes);
-// router.use('/loans', loanRoutes);       // Phase 5
+router.use('/loans', loanRoutes);
 // router.use('/auth', authRoutes);         // Phase 6
 // router.use('/dashboard', dashRoutes);    // Phase 6
 

@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================
+// Enums
+// =====================
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+
+  @@map("member_status")
+}
+
+enum LoanStatus {
+  BORROWED
+  RETURNED
+
+  @@map("loan_status")
+}
+
+// =====================
+// Models
+// =====================
+
+/// Petugas perpustakaan (untuk autentikasi)
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  username  String   @unique @db.VarChar(50)
+  password  String   @db.VarChar(255)
+  name      String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+/// Data buku perpustakaan
+model Book {
+  id              String   @id @default(uuid()) @db.Uuid
+  title           String   @db.VarChar(255)
+  author          String   @db.VarChar(255)
+  isbn            String   @unique @db.VarChar(13)
+  publisher       String   @db.VarChar(255)
+  yearPublished   Int      @map("year_published")
+  category        String   @db.VarChar(100)
+  totalCopies     Int      @map("total_copies")
+  availableCopies Int      @map("available_copies")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  loans Loan[]
+
+  @@index([category], name: "idx_books_category")
+  @@index([title, author, isbn], name: "idx_books_search")
+  @@map("books")
+}
+
+/// Data anggota perpustakaan
+model Member {
+  id           String       @id @default(uuid()) @db.Uuid
+  memberNumber String       @unique @map("member_number") @db.VarChar(50)
+  name         String       @db.VarChar(255)
+  email        String       @unique @db.VarChar(255)
+  phone        String       @db.VarChar(20)
+  status       MemberStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  loans Loan[]
+
+  @@index([status], name: "idx_members_status")
+  @@map("members")
+}
+
+/// Transaksi peminjaman buku
+model Loan {
+  id         String     @id @default(uuid()) @db.Uuid
+  memberId   String     @map("member_id") @db.Uuid
+  bookId     String     @map("book_id") @db.Uuid
+  loanDate   DateTime   @map("loan_date") @db.Date
+  dueDate    DateTime   @map("due_date") @db.Date
+  returnDate DateTime?  @map("return_date") @db.Date
+  status     LoanStatus @default(BORROWED)
+  lateDays   Int        @default(0) @map("late_days")
+  fineAmount Decimal?   @map("fine_amount") @db.Decimal(10, 2)
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+
+  member Member @relation(fields: [memberId], references: [id], onDelete: Restrict)
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Restrict)
+
+  @@index([memberId, status], name: "idx_loans_member_status")
+  @@index([bookId, status], name: "idx_loans_book_status")
+  @@index([status, dueDate], name: "idx_loans_overdue")
+  @@map("loans")
+}

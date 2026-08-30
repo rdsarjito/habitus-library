@@ -5,35 +5,69 @@ import { toast } from 'sonner';
 import { loansApi, getErrorMessage } from '@/lib/api';
 import type { Loan, LoanQuery, PaginationMeta } from '@/types/api';
 import { LoanCreateDialog } from './loan-create-dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
+import { FilterBar } from '@/components/ui/filter-bar';
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-  Plus, Loader2, ArrowLeftRight, ChevronLeft, ChevronRight, RotateCcw,
+  Plus,
+  Loader2,
+  ArrowLeftRight,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  Clock,
+  AlertTriangle,
+  CheckCircle2,
+  Layers,
 } from 'lucide-react';
 
 function StatusBadge({ status }: { status: string }) {
-  const config: Record<string, { label: string; className: string }> = {
-    BORROWED: { label: 'Dipinjam', className: 'bg-blue-100 text-blue-700 hover:bg-blue-100' },
-    OVERDUE: { label: 'Terlambat', className: 'bg-red-100 text-red-700 hover:bg-red-100' },
-    RETURNED: { label: 'Dikembalikan', className: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100' },
-  };
-  const c = config[status] || config.BORROWED;
-  return <Badge variant="secondary" className={c.className}>{c.label}</Badge>;
+  if (status === 'OVERDUE') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black bg-red-50 text-[#8d1231] border border-red-200/60 animate-pulse">
+        <AlertTriangle className="h-3.5 w-3.5 text-[#8d1231]" />
+        <span>Terlambat</span>
+      </span>
+    );
+  }
+  if (status === 'RETURNED') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+        <span>Dikembalikan</span>
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/60">
+      <Clock className="h-3.5 w-3.5 text-amber-600" />
+      <span>Dipinjam</span>
+    </span>
+  );
 }
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  return new Date(dateStr).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 }
 
 export default function LoansPage() {
@@ -41,11 +75,16 @@ export default function LoansPage() {
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [query, setQuery] = useState<LoanQuery>({ page: 1, perPage: 10, sort: 'createdAt', order: 'desc' });
+  const [query, setQuery] = useState<LoanQuery>({
+    page: 1,
+    perPage: 10,
+    sort: 'createdAt',
+    order: 'desc',
+  });
 
   const [createOpen, setCreateOpen] = useState(false);
   const [returnOpen, setReturnOpen] = useState(false);
-  const [returnLoan, setReturnLoan] = useState<Loan | null>(null);
+  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [returnLoading, setReturnLoading] = useState(false);
 
   const fetchLoans = useCallback(async () => {
@@ -61,25 +100,42 @@ export default function LoansPage() {
     }
   }, [query]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => { fetchLoans(); }, [fetchLoans]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    fetchLoans();
+  }, [fetchLoans]);
 
-  const handleStatusFilter = (status: string | null) => {
+  const handleStatusFilter = (status: string) => {
     setQuery((prev) => ({
       ...prev,
-      status: (!status || status === 'all') ? undefined : status as LoanQuery['status'],
+      status: status === 'all' ? undefined : (status as LoanQuery['status']),
       page: 1,
     }));
   };
 
-  const handleReturn = async () => {
-    if (!returnLoan) return;
+  const handleReset = () => {
+    setQuery({ page: 1, perPage: 10, sort: 'createdAt', order: 'desc' });
+  };
+
+  const handleReturnClick = (loan: Loan) => {
+    setSelectedLoan(loan);
+    setReturnOpen(true);
+  };
+
+  const handleConfirmReturn = async () => {
+    if (!selectedLoan) return;
     setReturnLoading(true);
     try {
-      const res = await loansApi.returnLoan(returnLoan.id);
-      toast.success(res.message);
+      const res = await loansApi.returnLoan(selectedLoan.id);
+      const fine = res.data?.fineAmount ? Number(res.data.fineAmount) : 0;
+      if (fine > 0) {
+        toast.warning(
+          `Buku berhasil dikembalikan. Denda keterlambatan: Rp ${fine.toLocaleString('id-ID')} (${res.data?.lateDays || 0} hari)`
+        );
+      } else {
+        toast.success('Buku berhasil dikembalikan tepat waktu');
+      }
       setReturnOpen(false);
+      setSelectedLoan(null);
       fetchLoans();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -89,142 +145,244 @@ export default function LoansPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Peminjaman</h1>
-          <p className="mt-1 text-slate-500">Kelola peminjaman dan pengembalian buku</p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Pinjam Buku
-        </Button>
-      </div>
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Header */}
+      <PageHeader
+        modulePath="Sirkulasi"
+        title="Daftar Peminjaman"
+        subtitle="Pantau status transaksi peminjaman, jatuh tempo, dan riwayat buku"
+        icon={ArrowLeftRight}
+        actionLabel="Pinjam Buku"
+        actionIcon={<Plus className="w-4 h-4" />}
+        onActionClick={() => setCreateOpen(true)}
+      />
 
-      {/* Filter */}
-      <Card className="border-slate-200 shadow-sm">
-        <CardContent className="pt-4">
-          <Select value={query.status || 'all'} onValueChange={handleStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="Semua Status" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Status</SelectItem>
-              <SelectItem value="BORROWED">Dipinjam</SelectItem>
-              <SelectItem value="OVERDUE">Terlambat</SelectItem>
-              <SelectItem value="RETURNED">Dikembalikan</SelectItem>
+      {/* Filter Bar */}
+      <FilterBar
+        searchPlaceholder="Filter dan urutkan status transaksi peminjaman..."
+        searchValue=""
+        onSearchChange={() => {}}
+        onReset={handleReset}
+        isLoading={loading}
+      >
+        <div className="w-full sm:w-52">
+          <Select
+            value={query.status || 'all'}
+            onValueChange={(val) => handleStatusFilter(val || "all")}
+          >
+            <SelectTrigger className="w-full h-10 rounded-xl bg-white border-slate-200/80 text-xs font-bold text-slate-700">
+              <SelectValue placeholder="Semua Status Transaksi" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+              <SelectItem value="all" className="text-xs font-semibold">Semua Status</SelectItem>
+              <SelectItem value="BORROWED" className="text-xs font-semibold text-amber-700">Dipinjam (Aktif)</SelectItem>
+              <SelectItem value="OVERDUE" className="text-xs font-semibold text-red-700">Terlambat (Overdue)</SelectItem>
+              <SelectItem value="RETURNED" className="text-xs font-semibold text-emerald-700">Dikembalikan (Selesai)</SelectItem>
             </SelectContent>
           </Select>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Table */}
-      <Card className="border-slate-200 shadow-sm">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            </div>
-          ) : loans.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <ArrowLeftRight className="h-12 w-12 mb-3" />
-              <p className="text-lg font-medium">Tidak ada data peminjaman</p>
-              <p className="text-sm">Buat peminjaman baru dengan menekan tombol &quot;Pinjam Buku&quot;</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto -mx-1">
-              <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Anggota</TableHead>
-                  <TableHead>Buku</TableHead>
-                  <TableHead>Tgl Pinjam</TableHead>
-                  <TableHead>Tgl Tempo</TableHead>
-                  <TableHead>Tgl Kembali</TableHead>
-                  <TableHead className="text-center">Status</TableHead>
-                  <TableHead className="text-right">Denda</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loans.map((loan) => (
-                  <TableRow key={loan.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-slate-900">{loan.member.name}</p>
-                        <p className="text-xs text-slate-500">{loan.member.memberNumber}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-slate-900">{loan.book.title}</p>
-                        <p className="text-xs text-slate-500">{loan.book.author}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-slate-600">{formatDate(loan.loanDate)}</TableCell>
-                    <TableCell className="text-sm text-slate-600">{formatDate(loan.dueDate)}</TableCell>
-                    <TableCell className="text-sm text-slate-600">
-                      {loan.returnDate ? formatDate(loan.returnDate) : '—'}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <StatusBadge status={loan.displayStatus} />
-                    </TableCell>
-                    <TableCell className="text-right text-sm">
-                      {loan.fineAmount ? (
-                        <span className="font-medium text-red-600">Rp {Number(loan.fineAmount).toLocaleString('id-ID')}</span>
-                      ) : '—'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {loan.displayStatus !== 'RETURNED' && (
-                        <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => { setReturnLoan(loan); setReturnOpen(true); }}>
-                          <RotateCcw className="h-3.5 w-3.5" />
-                          Kembalikan
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-              </div>
-          )}
+        <div className="w-full sm:w-52">
+          <Select
+            value={`${query.sort}-${query.order}`}
+            onValueChange={(val) => {
+              if (!val) return;
+              const [sort, order] = val.split('-') as [LoanQuery['sort'], LoanQuery['order']];
+              setQuery((prev) => ({ ...prev, sort, order, page: 1 }));
+            }}
+          >
+            <SelectTrigger className="w-full h-10 rounded-xl bg-white border-slate-200/80 text-xs font-bold text-slate-700">
+              <SelectValue placeholder="Urutan" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+              <SelectItem value="createdAt-desc" className="text-xs font-semibold">Terbaru Dibuat</SelectItem>
+              <SelectItem value="dueDate-asc" className="text-xs font-semibold">Jatuh Tempo Terdekat</SelectItem>
+              <SelectItem value="dueDate-desc" className="text-xs font-semibold">Jatuh Tempo Terjauh</SelectItem>
+              <SelectItem value="loanDate-desc" className="text-xs font-semibold">Tanggal Pinjam</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </FilterBar>
 
-          {meta && meta.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
-              <p className="text-sm text-slate-500">Menampilkan {loans.length} dari {meta.total} peminjaman</p>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" disabled={meta.page <= 1} onClick={() => setQuery((p) => ({ ...p, page: (p.page || 1) - 1 }))}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm text-slate-600">{meta.page} / {meta.totalPages}</span>
-                <Button variant="outline" size="sm" disabled={meta.page >= meta.totalPages} onClick={() => setQuery((p) => ({ ...p, page: (p.page || 1) + 1 }))}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+      {/* Table Card */}
+      <div className="kpi-table-container">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#8d1231]" />
+            <p className="text-xs font-bold text-slate-400">Memuat transaksi peminjaman...</p>
+          </div>
+        ) : loans.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 text-[#8d1231] flex items-center justify-center mb-3">
+              <Layers className="w-7 h-7" />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <h3 className="text-base font-black text-slate-800">Tidak ada transaksi ditemukan</h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-sm">
+              Belum ada data peminjaman yang cocok dengan filter yang dipilih.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto custom-scrollbar">
+            <table>
+              <thead>
+                <tr>
+                  <th>Peminjam (Anggota)</th>
+                  <th>Judul Buku</th>
+                  <th>Tgl Pinjam</th>
+                  <th>Jatuh Tempo</th>
+                  <th>Status</th>
+                  <th>Denda</th>
+                  <th className="text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loans.map((loan) => {
+                  const fine = loan.fineAmount ? Number(loan.fineAmount) : 0;
+                  const isReturned = loan.status === 'RETURNED';
+                  return (
+                    <tr key={loan.id}>
+                      <td className="min-w-[180px]">
+                        <p className="font-black text-slate-900">{loan.member?.name}</p>
+                        <p className="text-[11px] font-mono font-bold text-slate-400">
+                          {loan.member?.memberNumber}
+                        </p>
+                      </td>
+                      <td className="min-w-[200px]">
+                        <p className="font-bold text-slate-800 line-clamp-1">{loan.book?.title}</p>
+                        <p className="text-[11px] font-medium text-slate-400">{loan.book?.author}</p>
+                      </td>
+                      <td className="text-xs font-semibold text-slate-600">
+                        {formatDate(loan.loanDate)}
+                      </td>
+                      <td className="text-xs font-semibold text-slate-600">
+                        {formatDate(loan.dueDate)}
+                      </td>
+                      <td>
+                        <StatusBadge status={loan.displayStatus || loan.status} />
+                      </td>
+                      <td>
+                        {fine > 0 ? (
+                          <div>
+                            <span className="text-xs font-black text-[#8d1231]">
+                              Rp {fine.toLocaleString('id-ID')}
+                            </span>
+                            <p className="text-[10px] font-semibold text-red-500">
+                              {loan.lateDays} hari telat
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-semibold text-slate-400">—</span>
+                        )}
+                      </td>
+                      <td className="text-right whitespace-nowrap">
+                        {!isReturned ? (
+                          <button
+                            onClick={() => handleReturnClick(loan)}
+                            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold text-[#8d1231] bg-red-50 hover:bg-[#8d1231] hover:text-white transition-all cursor-pointer shadow-xs active:scale-95"
+                            title="Proses Pengembalian"
+                          >
+                            <RotateCcw className="h-3.5 w-3.5" />
+                            <span>Kembalikan</span>
+                          </button>
+                        ) : (
+                          <span className="text-[11px] font-semibold text-slate-400">
+                            {loan.returnDate ? `Selesai ${formatDate(loan.returnDate)}` : 'Selesai'}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        {meta && meta.totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 bg-white">
+            <p className="text-xs font-semibold text-slate-500">
+              Menampilkan <span className="font-black text-slate-800">{loans.length}</span> dari{' '}
+              <span className="font-black text-slate-800">{meta.total}</span> transaksi
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={meta.page <= 1 || loading}
+                onClick={() => setQuery((prev) => ({ ...prev, page: prev.page! - 1 }))}
+                className="flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-[#8d1231] disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-xs font-black text-slate-700 px-2">
+                Halaman {meta.page} dari {meta.totalPages}
+              </span>
+              <button
+                disabled={meta.page >= meta.totalPages || loading}
+                onClick={() => setQuery((prev) => ({ ...prev, page: prev.page! + 1 }))}
+                className="flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-[#8d1231] disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer transition-all"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Create Dialog */}
-      <LoanCreateDialog open={createOpen} onOpenChange={setCreateOpen} onSuccess={fetchLoans} />
+      <LoanCreateDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSuccess={fetchLoans}
+      />
 
-      {/* Return Confirmation */}
+      {/* Return Confirmation Dialog */}
       <AlertDialog open={returnOpen} onOpenChange={setReturnOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Kembalikan Buku</AlertDialogTitle>
-            <AlertDialogDescription>
-              Kembalikan buku <strong>&quot;{returnLoan?.book.title}&quot;</strong> yang dipinjam oleh <strong>{returnLoan?.member.name}</strong>?
-              {returnLoan?.displayStatus === 'OVERDUE' && (
-                <span className="block mt-2 text-red-600 font-medium">
-                  ⚠️ Peminjaman ini sudah melewati batas waktu. Denda akan dihitung otomatis.
-                </span>
-              )}
-            </AlertDialogDescription>
+        <AlertDialogContent className="rounded-2xl border-slate-100 p-6 shadow-2xl">
+          <AlertDialogHeader className="flex flex-row items-start gap-3 space-y-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <RotateCcw className="w-5 h-5" />
+            </div>
+            <div>
+              <AlertDialogTitle className="text-lg font-black text-slate-900">
+                Konfirmasi Pengembalian Buku
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-slate-500 mt-1">
+                Apakah Anda yakin ingin memproses pengembalian buku{' '}
+                <strong className="text-slate-800">&quot;{selectedLoan?.book?.title}&quot;</strong> oleh{' '}
+                <strong className="text-slate-800">{selectedLoan?.member?.name}</strong>?
+              </AlertDialogDescription>
+            </div>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={returnLoading}>Batal</AlertDialogCancel>
-            <AlertDialogAction onClick={handleReturn} disabled={returnLoading}>
-              {returnLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Memproses...</> : 'Kembalikan'}
+
+          {selectedLoan && selectedLoan.displayStatus === 'OVERDUE' && (
+            <div className="rounded-xl bg-red-50 border border-red-200/80 p-3.5 text-xs text-red-700 flex items-center gap-2.5 font-bold">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-[#8d1231]" />
+              <span>
+                Peringatan: Peminjaman ini telah melewati jatuh tempo. Sistem akan otomatis menghitung denda Rp 1.000 / hari.
+              </span>
+            </div>
+          )}
+
+          <AlertDialogFooter className="pt-3 border-t border-slate-100 gap-2">
+            <AlertDialogCancel
+              disabled={returnLoading}
+              className="rounded-xl h-11 px-5 font-bold text-xs border-slate-200"
+            >
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmReturn}
+              disabled={returnLoading}
+              className="rounded-xl h-11 px-6 font-black text-xs text-white bg-gradient-to-r from-[#8d1231] to-[#cc1f39] hover:from-[#a01538] hover:to-[#e0243f] shadow-lg shadow-[#8d1231]/25"
+            >
+              {returnLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Memproses...
+                </>
+              ) : (
+                'Proses Pengembalian'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

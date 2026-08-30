@@ -6,18 +6,9 @@ import { booksApi, getErrorMessage } from '@/lib/api';
 import type { Book, BookQuery, PaginationMeta } from '@/types/api';
 import { BookFormDialog } from './book-form-dialog';
 import { DeleteDialog } from '@/components/shared/delete-dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { PageHeader } from '@/components/ui/page-header';
+import { FilterBar } from '@/components/ui/filter-bar';
+
 import {
   Select,
   SelectContent,
@@ -27,13 +18,13 @@ import {
 } from '@/components/ui/select';
 import {
   Plus,
-  Search,
   Pencil,
   Trash2,
   Loader2,
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Package,
 } from 'lucide-react';
 
 export default function BooksPage() {
@@ -42,8 +33,13 @@ export default function BooksPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [query, setQuery] = useState<BookQuery>({ page: 1, perPage: 10, sort: 'createdAt', order: 'desc' });
-  const [searchInput, setSearchInput] = useState('');
+  const [query, setQuery] = useState<BookQuery>({
+    page: 1,
+    perPage: 10,
+    sort: 'createdAt',
+    order: 'desc',
+  });
+  const [searchValue, setSearchValue] = useState('');
 
   // Dialog states
   const [formOpen, setFormOpen] = useState(false);
@@ -68,189 +64,262 @@ export default function BooksPage() {
     try {
       const cats = await booksApi.getCategories();
       setCategories(cats);
-    } catch { /* ignore */ }
+    } catch {
+      // Non-critical
+    }
   }, []);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => { fetchBooks(); }, [fetchBooks]);
-  useEffect(() => { fetchCategories(); }, [fetchCategories]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setQuery((prev) => ({ ...prev, search: searchInput || undefined, page: 1 }));
+  useEffect(() => {
+    fetchBooks();
+  }, [fetchBooks]);
+
+  const handleSearchChange = (search: string) => {
+    setSearchValue(search);
+    setQuery((prev) => ({ ...prev, search: search || undefined, page: 1 }));
   };
 
-  const handleCategoryFilter = (cat: string | null) => {
+  const handleCategoryChange = (category: string) => {
     setQuery((prev) => ({
       ...prev,
-      category: (!cat || cat === 'all') ? undefined : cat,
+      category: category === 'all' ? undefined : category,
       page: 1,
     }));
   };
 
-  const handleDelete = async () => {
+  const handleReset = () => {
+    setSearchValue('');
+    setQuery({ page: 1, perPage: 10, sort: 'createdAt', order: 'desc' });
+  };
+
+  const handleEdit = (book: Book) => {
+    setEditBook(book);
+    setFormOpen(true);
+  };
+
+  const handleDelete = (book: Book) => {
+    setDeleteBook(book);
+    setDeleteOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
     if (!deleteBook) return;
     try {
       await booksApi.delete(deleteBook.id);
       toast.success(`Buku "${deleteBook.title}" berhasil dihapus`);
+      setDeleteOpen(false);
+      setDeleteBook(null);
       fetchBooks();
+      fetchCategories();
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
   };
 
-  const openEdit = (book: Book) => { setEditBook(book); setFormOpen(true); };
-  const openCreate = () => { setEditBook(null); setFormOpen(true); };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Daftar Buku</h1>
-          <p className="mt-1 text-slate-500">Kelola koleksi buku perpustakaan</p>
+      <PageHeader
+        modulePath="Katalog"
+        title="Daftar Buku"
+        subtitle="Kelola seluruh katalog buku, ketersediaan stok, dan kategori"
+        icon={BookOpen}
+        actionLabel="Tambah Buku"
+        actionIcon={<Plus className="w-4 h-4" />}
+        onActionClick={() => {
+          setEditBook(null);
+          setFormOpen(true);
+        }}
+      />
+
+      {/* Filter Bar */}
+      <FilterBar
+        searchPlaceholder="Cari judul, penulis, atau ISBN..."
+        searchValue={searchValue}
+        onSearchChange={handleSearchChange}
+        onReset={handleReset}
+        isLoading={loading}
+      >
+        <div className="w-full sm:w-56">
+          <Select
+            value={query.category || 'all'}
+            onValueChange={(val) => handleCategoryChange(val || "all")}
+          >
+            <SelectTrigger className="w-full h-10 rounded-xl bg-white border-slate-200/80 text-xs font-bold text-slate-700">
+              <SelectValue placeholder="Semua Kategori" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+              <SelectItem value="all" className="text-xs font-semibold">Semua Kategori</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat} className="text-xs font-semibold">
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Button onClick={openCreate} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Tambah Buku
-        </Button>
+
+        <div className="w-full sm:w-48">
+          <Select
+            value={`${query.sort}-${query.order}`}
+            onValueChange={(val) => {
+              if (!val) return;
+              const [sort, order] = val.split('-') as [BookQuery['sort'], BookQuery['order']];
+              setQuery((prev) => ({ ...prev, sort, order, page: 1 }));
+            }}
+          >
+            <SelectTrigger className="w-full h-10 rounded-xl bg-white border-slate-200/80 text-xs font-bold text-slate-700">
+              <SelectValue placeholder="Urutan" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+              <SelectItem value="createdAt-desc" className="text-xs font-semibold">Terbaru Ditambahkan</SelectItem>
+              <SelectItem value="title-asc" className="text-xs font-semibold">Judul (A-Z)</SelectItem>
+              <SelectItem value="title-desc" className="text-xs font-semibold">Judul (Z-A)</SelectItem>
+              <SelectItem value="yearPublished-desc" className="text-xs font-semibold">Tahun Terbit (Baru)</SelectItem>
+              <SelectItem value="availableCopies-desc" className="text-xs font-semibold">Stok Terbanyak</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </FilterBar>
+
+      {/* Table Card */}
+      <div className="kpi-table-container">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-[#8d1231]" />
+            <p className="text-xs font-bold text-slate-400">Memuat data buku...</p>
+          </div>
+        ) : books.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center px-4">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 text-[#8d1231] flex items-center justify-center mb-3">
+              <Package className="w-7 h-7" />
+            </div>
+            <h3 className="text-base font-black text-slate-800">Tidak ada buku ditemukan</h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-sm">
+              Coba sesuaikan kata kunci pencarian atau filter kategori di atas.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto custom-scrollbar">
+            <table>
+              <thead>
+                <tr>
+                  <th>Judul Buku</th>
+                  <th>Penulis</th>
+                  <th>ISBN</th>
+                  <th>Kategori</th>
+                  <th>Tahun</th>
+                  <th>Stok</th>
+                  <th className="text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {books.map((book) => {
+                  const isOutOfStock = book.availableCopies === 0;
+                  return (
+                    <tr key={book.id}>
+                      <td className="font-bold text-slate-900 min-w-[200px]">
+                        <div>
+                          <p className="font-black text-slate-900 line-clamp-1">{book.title}</p>
+                          <p className="text-[11px] font-medium text-slate-400">{book.publisher}</p>
+                        </div>
+                      </td>
+                      <td className="font-semibold text-slate-600 min-w-[140px]">{book.author}</td>
+                      <td className="font-mono text-xs text-slate-500">{book.isbn}</td>
+                      <td>
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700">
+                          {book.category}
+                        </span>
+                      </td>
+                      <td className="font-semibold text-slate-600">{book.yearPublished}</td>
+                      <td>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black ${
+                            isOutOfStock
+                              ? 'bg-red-50 text-[#8d1231] border border-red-200/50'
+                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200/50'
+                          }`}
+                        >
+                          {book.availableCopies} / {book.totalCopies}
+                        </span>
+                      </td>
+                      <td className="text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleEdit(book)}
+                            className="p-2 rounded-xl text-slate-400 hover:text-[#8d1231] hover:bg-red-50 transition-all cursor-pointer"
+                            title="Edit Buku"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(book)}
+                            className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
+                            title="Hapus Buku"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        {meta && meta.totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 py-4 border-t border-slate-100 bg-white">
+            <p className="text-xs font-semibold text-slate-500">
+              Menampilkan <span className="font-black text-slate-800">{books.length}</span> dari{' '}
+              <span className="font-black text-slate-800">{meta.total}</span> buku
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={meta.page <= 1 || loading}
+                onClick={() => setQuery((prev) => ({ ...prev, page: prev.page! - 1 }))}
+                className="flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-[#8d1231] disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer transition-all"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-xs font-black text-slate-700 px-2">
+                Halaman {meta.page} dari {meta.totalPages}
+              </span>
+              <button
+                disabled={meta.page >= meta.totalPages || loading}
+                onClick={() => setQuery((prev) => ({ ...prev, page: prev.page! + 1 }))}
+                className="flex items-center justify-center w-9 h-9 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-[#8d1231] disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer transition-all"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Filters */}
-      <Card className="border-slate-200 shadow-sm">
-        <CardContent className="pt-4">
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <form onSubmit={handleSearch} className="flex flex-1 gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <Input
-                  placeholder="Cari judul, penulis, atau ISBN..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Button type="submit" variant="outline">Cari</Button>
-            </form>
-            <Select value={query.category || 'all'} onValueChange={handleCategoryFilter}>
-              <SelectTrigger className="w-full sm:w-44">
-                <SelectValue placeholder="Semua Kategori" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Kategori</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Form Dialog */}
+      <BookFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        book={editBook}
+        onSuccess={() => {
+          fetchBooks();
+          fetchCategories();
+        }}
+      />
 
-      {/* Table */}
-      <Card className="border-slate-200 shadow-sm">
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            </div>
-          ) : books.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <BookOpen className="h-12 w-12 mb-3" />
-              <p className="text-lg font-medium">Tidak ada buku ditemukan</p>
-              <p className="text-sm">Coba ubah filter atau tambahkan buku baru</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto -mx-1">
-              <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Judul</TableHead>
-                  <TableHead>Penulis</TableHead>
-                  <TableHead>ISBN</TableHead>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead className="text-center">Stok</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {books.map((book) => (
-                  <TableRow key={book.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-slate-900">{book.title}</p>
-                        <p className="text-xs text-slate-500">{book.publisher}, {book.yearPublished}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-slate-600">{book.author}</TableCell>
-                    <TableCell className="font-mono text-xs text-slate-500">{book.isbn}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="font-normal">{book.category}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className={`font-semibold ${book.availableCopies === 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                        {book.availableCopies}
-                      </span>
-                      <span className="text-slate-400">/{book.totalCopies}</span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openEdit(book)} className="h-8 w-8">
-                          <Pencil className="h-4 w-4 text-slate-500" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => { setDeleteBook(book); setDeleteOpen(true); }} className="h-8 w-8">
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-              </div>
-          )}
-
-          {/* Pagination */}
-          {meta && meta.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
-              <p className="text-sm text-slate-500">
-                Menampilkan {books.length} dari {meta.total} buku
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={meta.page <= 1}
-                  onClick={() => setQuery((p) => ({ ...p, page: (p.page || 1) - 1 }))}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm text-slate-600">
-                  {meta.page} / {meta.totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={meta.page >= meta.totalPages}
-                  onClick={() => setQuery((p) => ({ ...p, page: (p.page || 1) + 1 }))}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Dialogs */}
-      <BookFormDialog open={formOpen} onOpenChange={setFormOpen} book={editBook} onSuccess={fetchBooks} />
+      {/* Delete Dialog */}
       <DeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         title="Hapus Buku"
         description={`Apakah Anda yakin ingin menghapus buku "${deleteBook?.title}"? Tindakan ini tidak dapat dibatalkan.`}
-        onConfirm={handleDelete}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );

@@ -1,22 +1,26 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth.store';
 import { dashboardApi, getErrorMessage } from '@/lib/api';
 import type { DashboardStats } from '@/types/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
+import { SummaryCards, type SummaryCardItem } from '@/components/ui/summary-cards';
 import {
   BookOpen,
   Users,
   ArrowLeftRight,
   AlertTriangle,
-  TrendingUp,
-  Loader2,
+  RotateCcw,
   RefreshCw,
-  BookCopy,
-  Banknote,
+  Library,
+  Coins,
+  ShieldAlert,
+  ArrowRight,
+  BookCheck,
+  UserCheck,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -37,215 +41,192 @@ export default function DashboardPage() {
     }
   }, []);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const summaryItems: SummaryCardItem[] = stats
+    ? [
+        {
+          label: 'Total Judul Buku',
+          value: stats.books.total,
+          subValue: `${stats.books.availableCopies} dari ${stats.books.totalCopies} eksemplar tersedia`,
+          icon: BookOpen,
+          color: 'blue',
+        },
+        {
+          label: 'Anggota Terdaftar',
+          value: stats.members.total,
+          subValue: `${stats.members.active} aktif • ${stats.members.inactive} nonaktif`,
+          icon: Users,
+          color: 'emerald',
+        },
+        {
+          label: 'Peminjaman Aktif',
+          value: stats.loans.active,
+          subValue: `${stats.loans.returned} buku selesai dikembalikan`,
+          icon: ArrowLeftRight,
+          color: 'amber',
+        },
+        {
+          label: 'Peminjaman Terlambat',
+          value: stats.loans.overdue,
+          subValue:
+            stats.loans.overdue > 0
+              ? 'Memerlukan penagihan segera'
+              : 'Semua tepat waktu',
+          icon: AlertTriangle,
+          color: 'rose',
+          isAlert: stats.loans.overdue > 0,
+        },
+      ]
+    : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="mt-1 text-slate-500">
-            Selamat datang kembali, {user?.name}! 👋
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fetchStats}
-          disabled={loading}
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
-      </div>
+      <PageHeader
+        modulePath="Ringkasan"
+        title="Dashboard Utama"
+        subtitle={`Selamat datang kembali, ${user?.name || 'Petugas'}!`}
+        icon={Library}
+        extraAction={
+          <button
+            onClick={fetchStats}
+            disabled={loading}
+            className="flex items-center gap-2 h-11 px-4 bg-white border border-slate-200/80 text-slate-700 hover:text-[#8d1231] hover:border-[#8d1231]/30 hover:bg-red-50/50 rounded-xl transition-all font-bold text-xs shadow-xs active:scale-95 cursor-pointer"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin text-[#8d1231]' : ''}`} />
+            <span>Perbarui Data</span>
+          </button>
+        }
+      />
 
-      {/* Error */}
+      {/* Error notification */}
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
-          {error}
+        <div className="rounded-2xl bg-red-50 border border-red-200/80 p-4 text-sm font-semibold text-red-700 flex items-center gap-3">
+          <ShieldAlert className="h-5 w-5 shrink-0 text-red-500" />
+          <span>{error}</span>
         </div>
       )}
 
-      {/* Loading */}
-      {loading && !stats && (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      {/* Summary KPI Cards */}
+      <SummaryCards items={summaryItems} loading={loading && !stats} />
+
+      {/* Extended Metrics & Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Fine Collection Card */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
+              Total Denda Terkumpul
+            </span>
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Coins className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="my-5">
+            <h3 className="text-3xl font-black text-slate-900 tracking-tight">
+              Rp {Number(stats?.fines.totalAmount || 0).toLocaleString('id-ID')}
+            </h3>
+            <p className="text-xs font-semibold text-slate-400 mt-1">
+              Dari {stats?.fines.totalTransactions || 0} transaksi pengembalian terlambat
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-600">
+            <span>Tarif Keterlambatan</span>
+            <span className="text-[#8d1231]">Rp 1.000 / hari</span>
+          </div>
         </div>
-      )}
 
-      {/* Stats Cards */}
-      {stats && (
-        <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {/* Total Buku */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">
-                  Total Buku
-                </CardTitle>
-                <div className="rounded-lg bg-blue-50 p-2">
-                  <BookOpen className="h-4 w-4 text-blue-600" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-slate-900">
-                  {stats.books.total}
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  {stats.books.availableCopies} dari {stats.books.totalCopies} eksemplar tersedia
-                </p>
-              </CardContent>
-            </Card>
+        {/* Quick Operations / Navigation Shortcuts */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-extrabold uppercase tracking-widest text-slate-400">
+                Aksi Cepat & Navigasi
+              </h3>
+              <span className="text-xs font-bold text-[#8d1231]">Pintasan Petugas</span>
+            </div>
 
-            {/* Anggota Aktif */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">
-                  Anggota Aktif
-                </CardTitle>
-                <div className="rounded-lg bg-emerald-50 p-2">
-                  <Users className="h-4 w-4 text-emerald-600" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Link
+                href="/dashboard/loans"
+                className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 hover:border-[#8d1231]/30 hover:bg-red-50/30 group transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-red-50 text-[#8d1231] flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <ArrowLeftRight className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 group-hover:text-[#8d1231] transition-colors">
+                      Peminjaman Buku
+                    </p>
+                    <p className="text-[11px] text-slate-400">Buat transaksi baru</p>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-slate-900">
-                  {stats.members.active}
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  {stats.members.inactive} nonaktif dari {stats.members.total} total
-                </p>
-              </CardContent>
-            </Card>
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-[#8d1231] group-hover:translate-x-0.5 transition-all" />
+              </Link>
 
-            {/* Peminjaman Aktif */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">
-                  Peminjaman Aktif
-                </CardTitle>
-                <div className="rounded-lg bg-amber-50 p-2">
-                  <ArrowLeftRight className="h-4 w-4 text-amber-600" />
+              <Link
+                href="/dashboard/returns"
+                className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 hover:border-amber-200 hover:bg-amber-50/30 group transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <RotateCcw className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 group-hover:text-amber-700 transition-colors">
+                      Pengembalian Buku
+                    </p>
+                    <p className="text-[11px] text-slate-400">Proses & hitung denda</p>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-slate-900">
-                  {stats.loans.active}
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  {stats.loans.returned} sudah dikembalikan
-                </p>
-              </CardContent>
-            </Card>
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all" />
+              </Link>
 
-            {/* Overdue */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-slate-600">
-                  Terlambat
-                </CardTitle>
-                <div className={`rounded-lg p-2 ${stats.loans.overdue > 0 ? 'bg-red-50' : 'bg-slate-50'}`}>
-                  <AlertTriangle className={`h-4 w-4 ${stats.loans.overdue > 0 ? 'text-red-600' : 'text-slate-400'}`} />
+              <Link
+                href="/dashboard/books"
+                className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/30 group transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <BookCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 group-hover:text-blue-700 transition-colors">
+                      Katalog Buku
+                    </p>
+                    <p className="text-[11px] text-slate-400">Kelola stok & kategori</p>
+                  </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-3xl font-bold ${stats.loans.overdue > 0 ? 'text-red-600' : 'text-slate-900'}`}>
-                  {stats.loans.overdue}
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
+              </Link>
+
+              <Link
+                href="/dashboard/members"
+                className="flex items-center justify-between p-3.5 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/30 group transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <UserCheck className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-800 group-hover:text-emerald-700 transition-colors">
+                      Data Anggota
+                    </p>
+                    <p className="text-[11px] text-slate-400">Status & nomor anggota</p>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  buku belum dikembalikan
-                </p>
-              </CardContent>
-            </Card>
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all" />
+              </Link>
+            </div>
           </div>
-
-          {/* Summary Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
-            {/* Koleksi */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900">
-                  <BookCopy className="h-5 w-5 text-blue-500" />
-                  Koleksi Buku
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Judul</span>
-                  <span className="font-medium">{stats.books.total}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Total Eksemplar</span>
-                  <span className="font-medium">{stats.books.totalCopies}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Tersedia</span>
-                  <span className="font-medium text-emerald-600">{stats.books.availableCopies}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Dipinjam</span>
-                  <span className="font-medium text-amber-600">{stats.books.totalCopies - stats.books.availableCopies}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Peminjaman */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900">
-                  <TrendingUp className="h-5 w-5 text-amber-500" />
-                  Statistik Peminjaman
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Total Transaksi</span>
-                  <span className="font-medium">{stats.loans.total}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Sedang Dipinjam</span>
-                  <span className="font-medium text-blue-600">{stats.loans.active}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Dikembalikan</span>
-                  <span className="font-medium text-emerald-600">{stats.loans.returned}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Terlambat</span>
-                  <span className={`font-medium ${stats.loans.overdue > 0 ? 'text-red-600' : ''}`}>{stats.loans.overdue}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Denda */}
-            <Card className="border-slate-200 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base font-semibold text-slate-900">
-                  <Banknote className="h-5 w-5 text-emerald-500" />
-                  Denda
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Total Denda</span>
-                  <span className="font-medium">
-                    Rp {Number(stats.fines.totalAmount).toLocaleString('id-ID')}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Transaksi Denda</span>
-                  <span className="font-medium">{stats.fines.totalTransactions}</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
+        </div>
+      </div>
     </div>
   );
 }

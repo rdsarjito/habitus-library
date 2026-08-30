@@ -28,20 +28,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <p className="text-sm text-slate-500">Memuat...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-[#8d1231]" />
+          <p className="text-sm font-semibold text-slate-500">Memuat...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50/70">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      {/* Desktop: ml-64 to make room for fixed sidebar; Mobile: no margin */}
-      <div className="lg:ml-64">
+      {/* Desktop: ml-60 to match w-60 sidebar; Mobile: full width */}
+      <div className="lg:ml-60 transition-all duration-300">
         <Header onMenuToggle={() => setSidebarOpen((prev) => !prev)} />
-        <main className="p-4 sm:p-6">{children}</main>
+        <main className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">{children}</main>
       </div>
     </div>
   );

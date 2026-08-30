@@ -90,7 +90,7 @@ export default function LoansPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Peminjaman</h1>
           <p className="mt-1 text-slate-500">Kelola peminjaman dan pengembalian buku</p>
@@ -130,7 +130,8 @@ export default function LoansPage() {
               <p className="text-sm">Buat peminjaman baru dengan menekan tombol &quot;Pinjam Buku&quot;</p>
             </div>
           ) : (
-            <Table>
+            <div className="overflow-x-auto -mx-1">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Anggota</TableHead>

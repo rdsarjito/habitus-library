@@ -545,7 +545,6 @@ docker compose -f docker-compose.prod.yml --env-file backend/.env up -d --build
 The following items are not yet implemented:
 
 - **Unit Tests**: Only loan service and date utility tests are implemented (30 tests). Integration tests and other service tests are not yet written
-- **Mobile responsiveness**: The dashboard layout uses a fixed sidebar that is not optimized for mobile screen sizes
 - **Search debounce**: Search uses a submit button rather than real-time debounce on keystroke
 - **Soft delete**: Books and members use hard delete (with foreign key protection) rather than soft delete
 

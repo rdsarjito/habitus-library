@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { Sidebar } from './sidebar';
@@ -10,6 +10,7 @@ import { Loader2 } from 'lucide-react';
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { isAuthenticated, isInitialized, initialize } = useAuthStore();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     initialize();
@@ -21,6 +22,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       router.replace('/login');
     }
   }, [isInitialized, isAuthenticated, router]);
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, []);
 
   // Show loading while checking auth
   if (!isInitialized || !isAuthenticated) {
@@ -36,10 +42,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Sidebar />
-      <div className="ml-64">
-        <Header />
-        <main className="p-6">{children}</main>
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {/* Desktop: ml-64 to make room for fixed sidebar; Mobile: no margin */}
+      <div className="lg:ml-64">
+        <Header onMenuToggle={() => setSidebarOpen((prev) => !prev)} />
+        <main className="p-4 sm:p-6">{children}</main>
       </div>
     </div>
   );

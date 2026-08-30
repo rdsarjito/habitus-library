@@ -76,7 +76,7 @@ export default function MembersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Daftar Anggota</h1>
           <p className="mt-1 text-slate-500">Kelola data anggota perpustakaan</p>
@@ -124,7 +124,8 @@ export default function MembersPage() {
               <p className="text-sm">Coba ubah filter atau tambahkan anggota baru</p>
             </div>
           ) : (
-            <Table>
+            <div className="overflow-x-auto -mx-1">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>No. Anggota</TableHead>

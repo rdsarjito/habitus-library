@@ -106,7 +106,7 @@ export default function BooksPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Daftar Buku</h1>
           <p className="mt-1 text-slate-500">Kelola koleksi buku perpustakaan</p>
@@ -162,7 +162,8 @@ export default function BooksPage() {
               <p className="text-sm">Coba ubah filter atau tambahkan buku baru</p>
             </div>
           ) : (
-            <Table>
+            <div className="overflow-x-auto -mx-1">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Judul</TableHead>

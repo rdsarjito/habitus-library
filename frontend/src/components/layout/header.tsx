@@ -11,9 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, Menu, User } from 'lucide-react';
 
-export function Header() {
+interface HeaderProps {
+  onMenuToggle?: () => void;
+}
+
+export function Header({ onMenuToggle }: HeaderProps) {
   const router = useRouter();
   const { user, logout } = useAuthStore();
 
@@ -32,9 +36,18 @@ export function Header() {
     : 'U';
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-sm px-6">
-      {/* Left — Page breadcrumb area (can be expanded later) */}
-      <div />
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/80 backdrop-blur-sm px-4 sm:px-6">
+      {/* Left — hamburger (mobile only) */}
+      <button
+        onClick={onMenuToggle}
+        className="rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 lg:hidden"
+        aria-label="Buka menu"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {/* Spacer on desktop */}
+      <div className="hidden lg:block" />
 
       {/* Right — User menu */}
       <DropdownMenu>

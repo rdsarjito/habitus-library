@@ -1,0 +1,277 @@
+{
+  "info": {
+    "name": "Library Management System API",
+    "_postman_id": "habitus-library-api-v1",
+    "description": "REST API for managing library books, members, and loan transactions.\n\n**Base URL (Production):** https://habitus-api.ramadhaninursarjito.tech/api/v1\n**Swagger UI:** https://habitus-api.ramadhaninursarjito.tech/api/docs\n\n## Setup\n1. Login via `POST /auth/login` to get a JWT token\n2. Copy the token from the response\n3. Set the `token` variable in the collection variables\n4. All protected endpoints will automatically use it via `Bearer {{token}}`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://habitus-api.ramadhaninursarjito.tech/api/v1", "type": "string" },
+    { "key": "token", "value": "", "type": "string" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "A. Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": ["const res = pm.response.json();", "if (res.success && res.data?.token) {", "  pm.collectionVariables.set('token', res.data.token);", "  console.log('Token saved');", "}"], "type": "text/javascript" } }],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}" },
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "description": "Login dengan username dan password. Token JWT otomatis tersimpan ke collection variable `token`."
+          }
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
+            "description": "Ambil profil user yang sedang login."
+          }
+        }
+      ]
+    },
+    {
+      "name": "B. Books",
+      "item": [
+        {
+          "name": "List Books",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/books?page=1&perPage=10&sort=createdAt&order=desc",
+              "host": ["{{baseUrl}}"], "path": ["books"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "perPage", "value": "10" },
+                { "key": "sort", "value": "createdAt" },
+                { "key": "order", "value": "desc" },
+                { "key": "search", "value": "", "disabled": true, "description": "Search by title, author, or ISBN" },
+                { "key": "category", "value": "", "disabled": true, "description": "Filter by category" }
+              ]
+            },
+            "description": "Daftar semua buku dengan search, filter kategori, sorting, dan pagination."
+          }
+        },
+        {
+          "name": "List Books - Search",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/books?search=clean code",
+              "host": ["{{baseUrl}}"], "path": ["books"],
+              "query": [{ "key": "search", "value": "clean code" }]
+            }
+          }
+        },
+        {
+          "name": "List Books - Filter by Category",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/books?category=Programming",
+              "host": ["{{baseUrl}}"], "path": ["books"],
+              "query": [{ "key": "category", "value": "Programming" }]
+            }
+          }
+        },
+        {
+          "name": "Get Book Categories",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/books/categories", "host": ["{{baseUrl}}"], "path": ["books", "categories"] },
+            "description": "Daftar semua kategori buku yang ada."
+          }
+        },
+        {
+          "name": "Get Book by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/books/:id", "host": ["{{baseUrl}}"], "path": ["books", ":id"], "variable": [{ "key": "id", "value": "" }] },
+            "description": "Detail satu buku berdasarkan UUID."
+          }
+        },
+        {
+          "name": "Create Book",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Clean Coder\",\n  \"author\": \"Robert C. Martin\",\n  \"isbn\": \"9780137081073\",\n  \"publisher\": \"Prentice Hall\",\n  \"yearPublished\": 2011,\n  \"category\": \"Programming\",\n  \"totalCopies\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/books", "host": ["{{baseUrl}}"], "path": ["books"] },
+            "description": "Tambah buku baru. `availableCopies` otomatis sama dengan `totalCopies`."
+          }
+        },
+        {
+          "name": "Update Book",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Clean Coder\",\n  \"author\": \"Robert C. Martin\",\n  \"isbn\": \"9780137081073\",\n  \"publisher\": \"Prentice Hall\",\n  \"yearPublished\": 2011,\n  \"category\": \"Programming\",\n  \"totalCopies\": 3\n}" },
+            "url": { "raw": "{{baseUrl}}/books/:id", "host": ["{{baseUrl}}"], "path": ["books", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Book",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/books/:id", "host": ["{{baseUrl}}"], "path": ["books", ":id"], "variable": [{ "key": "id", "value": "" }] },
+            "description": "Hapus buku. Akan gagal jika buku masih memiliki pinjaman aktif."
+          }
+        }
+      ]
+    },
+    {
+      "name": "C. Members",
+      "item": [
+        {
+          "name": "List Members",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/members?page=1&perPage=10",
+              "host": ["{{baseUrl}}"], "path": ["members"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "perPage", "value": "10" },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "status", "value": "ACTIVE", "disabled": true, "description": "ACTIVE or INACTIVE" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Member by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/members/:id", "host": ["{{baseUrl}}"], "path": ["members", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Create Member",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"John Doe\",\n  \"memberNumber\": \"MBR-2026-007\",\n  \"email\": \"john@email.com\",\n  \"phone\": \"081234567899\",\n  \"status\": \"ACTIVE\"\n}" },
+            "url": { "raw": "{{baseUrl}}/members", "host": ["{{baseUrl}}"], "path": ["members"] }
+          }
+        },
+        {
+          "name": "Update Member",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"John Doe Updated\",\n  \"memberNumber\": \"MBR-2026-007\",\n  \"email\": \"john@email.com\",\n  \"phone\": \"081234567899\",\n  \"status\": \"INACTIVE\"\n}" },
+            "url": { "raw": "{{baseUrl}}/members/:id", "host": ["{{baseUrl}}"], "path": ["members", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Delete Member",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/members/:id", "host": ["{{baseUrl}}"], "path": ["members", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "D. Loans",
+      "item": [
+        {
+          "name": "List Loans (All)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/loans?page=1&perPage=10",
+              "host": ["{{baseUrl}}"], "path": ["loans"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "perPage", "value": "10" },
+                { "key": "status", "value": "", "disabled": true, "description": "BORROWED, OVERDUE, or RETURNED" },
+                { "key": "memberId", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Loans - Active (BORROWED)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/loans?status=BORROWED",
+              "host": ["{{baseUrl}}"], "path": ["loans"],
+              "query": [{ "key": "status", "value": "BORROWED" }]
+            }
+          }
+        },
+        {
+          "name": "List Loans - Overdue",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/loans?status=OVERDUE",
+              "host": ["{{baseUrl}}"], "path": ["loans"],
+              "query": [{ "key": "status", "value": "OVERDUE" }]
+            }
+          }
+        },
+        {
+          "name": "List Loans - Returned",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/loans?status=RETURNED",
+              "host": ["{{baseUrl}}"], "path": ["loans"],
+              "query": [{ "key": "status", "value": "RETURNED" }]
+            }
+          }
+        },
+        {
+          "name": "Get Loan by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/loans/:id", "host": ["{{baseUrl}}"], "path": ["loans", ":id"], "variable": [{ "key": "id", "value": "" }] }
+          }
+        },
+        {
+          "name": "Create Loan (Borrow Book) ⭐",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"memberId\": \"<member-uuid>\",\n  \"bookId\": \"<book-uuid>\"\n}" },
+            "url": { "raw": "{{baseUrl}}/loans", "host": ["{{baseUrl}}"], "path": ["loans"] },
+            "description": "Proses peminjaman buku. Sistem memvalidasi:\n- Stok buku tersedia\n- Anggota berstatus AKTIF\n- Anggota belum mencapai batas 3 pinjaman aktif\n- Anggota tidak memiliki buku overdue\n- Anggota tidak sedang meminjam buku yang sama\n\nSemua validasi yang gagal dikembalikan sekaligus (bukan hanya yang pertama)."
+          }
+        },
+        {
+          "name": "Return Book (Pengembalian) ⭐",
+          "request": {
+            "method": "PATCH",
+            "url": { "raw": "{{baseUrl}}/loans/:id/return", "host": ["{{baseUrl}}"], "path": ["loans", ":id", "return"], "variable": [{ "key": "id", "value": "" }] },
+            "description": "Proses pengembalian buku. Tidak perlu request body.\n- Tanggal pengembalian = hari ini (server time)\n- Keterlambatan dan denda dihitung otomatis\n- Stok buku bertambah kembali\n- Pengembalian kedua kali ditolak dengan error LOAN_ALREADY_RETURNED"
+          }
+        }
+      ]
+    },
+    {
+      "name": "E. Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/dashboard", "host": ["{{baseUrl}}"], "path": ["dashboard"] },
+            "description": "Statistik ringkasan: total buku, anggota aktif, peminjaman aktif, buku overdue, total denda."
+          }
+        }
+      ]
+    }
+  ]
+}

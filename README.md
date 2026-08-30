@@ -7,6 +7,8 @@
 > **📖 API Documentation (Swagger UI):** [habitus-api.ramadhaninursarjito.tech/api/docs](https://habitus-api.ramadhaninursarjito.tech/api/docs)
 > 
 > **📄 API Documentation (Markdown):** [docs/API.md](./docs/API.md)
+> 
+> **📮 Postman Collection:** [docs/postman_collection.json](./docs/postman_collection.json) — Import ke Postman, set variable `token` setelah login
 
 A full-stack web application for managing library books, members, and loan transactions. Built as a take-home assessment project demonstrating clean architecture, business logic implementation, and modern web development practices.
 

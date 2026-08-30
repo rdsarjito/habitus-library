@@ -260,6 +260,8 @@ All environment variables are validated at startup using Zod. The server will no
 
 ## API Endpoints
 
+> 📖 **Full API Documentation with request/response examples:** [docs/API.md](./docs/API.md)
+
 All endpoints are prefixed with `/api/v1`. Protected endpoints require a JWT token in the `Authorization: Bearer <token>` header.
 
 ### Authentication

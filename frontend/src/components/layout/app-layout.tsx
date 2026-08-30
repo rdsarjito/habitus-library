@@ -23,11 +23,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isInitialized, isAuthenticated, router]);
 
-  // Close sidebar on route change (mobile)
-  useEffect(() => {
-    setSidebarOpen(false);
-  }, []);
-
   // Show loading while checking auth
   if (!isInitialized || !isAuthenticated) {
     return (

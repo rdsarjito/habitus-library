@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 export const createMemberSchema = z.object({
-  memberNumber: z.string().trim().min(1, 'Nomor anggota wajib diisi').max(50),
   name: z.string().trim().min(1, 'Nama wajib diisi').max(255),
   email: z
     .string()

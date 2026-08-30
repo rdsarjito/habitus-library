@@ -6,12 +6,26 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "https://habitus-api.ramadhaninursarjito.tech/api/v1", "type": "string" },
-    { "key": "token", "value": "", "type": "string" }
+    {
+      "key": "baseUrl",
+      "value": "https://habitus-api.ramadhaninursarjito.tech/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
   ],
   "auth": {
     "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
   },
   "item": [
     {
@@ -19,23 +33,134 @@
       "item": [
         {
           "name": "Login",
-          "event": [{ "listen": "test", "script": { "exec": ["const res = pm.response.json();", "if (res.success && res.data?.token) {", "  pm.collectionVariables.set('token', res.data.token);", "  console.log('Token saved');", "}"], "type": "text/javascript" } }],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data?.token) {",
+                  "  pm.collectionVariables.set('token', res.data.token);",
+                  "  console.log('Token saved');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}" },
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
             "description": "Login dengan username dan password. Token JWT otomatis tersimpan ke collection variable `token`."
-          }
+          },
+          "response": [
+            {
+              "name": "Login Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login berhasil\",\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIs...\",\n    \"user\": {\n      \"id\": \"uuid\",\n      \"username\": \"admin\",\n      \"role\": \"STAFF\"\n    }\n  }\n}"
+            },
+            {
+              "name": "Invalid Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Username atau password salah\",\n  \"errors\": [\n    {\n      \"code\": \"INVALID_CREDENTIALS\",\n      \"message\": \"Username atau password salah\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Validasi gagal\",\n  \"errors\": [\n    {\n      \"code\": \"VALIDATION_ERROR\",\n      \"field\": \"username\",\n      \"message\": \"Username wajib diisi\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Get Current User (Me)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/auth/me", "host": ["{{baseUrl}}"], "path": ["auth", "me"] },
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
             "description": "Ambil profil user yang sedang login."
-          }
+          },
+          "response": [
+            {
+              "name": "Profile Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"uuid\",\n    \"username\": \"admin\",\n    \"role\": \"STAFF\"\n  }\n}"
+            },
+            {
+              "name": "Not Authenticated",
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Token tidak valid atau sudah kedaluwarsa\",\n  \"errors\": [\n    {\n      \"code\": \"UNAUTHORIZED\",\n      \"message\": \"Token tidak valid\"\n    }\n  ]\n}"
+            }
+          ]
         }
       ]
     },
@@ -48,18 +173,60 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/books?page=1&perPage=10&sort=createdAt&order=desc",
-              "host": ["{{baseUrl}}"], "path": ["books"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "perPage", "value": "10" },
-                { "key": "sort", "value": "createdAt" },
-                { "key": "order", "value": "desc" },
-                { "key": "search", "value": "", "disabled": true, "description": "Search by title, author, or ISBN" },
-                { "key": "category", "value": "", "disabled": true, "description": "Filter by category" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Search by title, author, or ISBN"
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by category"
+                }
               ]
             },
             "description": "Daftar semua buku dengan search, filter kategori, sorting, dan pagination."
-          }
+          },
+          "response": [
+            {
+              "name": "List Books Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"uuid-1\",\n      \"title\": \"The Pragmatic Programmer\",\n      \"author\": \"David Thomas\",\n      \"isbn\": \"9780135957059\",\n      \"category\": \"Programming\",\n      \"yearPublished\": 2019,\n      \"publisher\": \"Addison-Wesley\",\n      \"totalCopies\": 3,\n      \"availableCopies\": 2,\n      \"createdAt\": \"2026-08-29T00:00:00.000Z\"\n    }\n  ],\n  \"meta\": {\n    \"page\": 1,\n    \"perPage\": 10,\n    \"totalItems\": 8,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ]
         },
         {
           "name": "List Books - Search",
@@ -67,10 +234,35 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/books?search=clean code",
-              "host": ["{{baseUrl}}"], "path": ["books"],
-              "query": [{ "key": "search", "value": "clean code" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "clean code"
+                }
+              ]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "List Books Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"uuid-1\",\n      \"title\": \"The Pragmatic Programmer\",\n      \"author\": \"David Thomas\",\n      \"isbn\": \"9780135957059\",\n      \"category\": \"Programming\",\n      \"yearPublished\": 2019,\n      \"publisher\": \"Addison-Wesley\",\n      \"totalCopies\": 3,\n      \"availableCopies\": 2,\n      \"createdAt\": \"2026-08-29T00:00:00.000Z\"\n    }\n  ],\n  \"meta\": {\n    \"page\": 1,\n    \"perPage\": 10,\n    \"totalItems\": 8,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ]
         },
         {
           "name": "List Books - Filter by Category",
@@ -78,53 +270,309 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/books?category=Programming",
-              "host": ["{{baseUrl}}"], "path": ["books"],
-              "query": [{ "key": "category", "value": "Programming" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Programming"
+                }
+              ]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "List Books Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"uuid-1\",\n      \"title\": \"The Pragmatic Programmer\",\n      \"author\": \"David Thomas\",\n      \"isbn\": \"9780135957059\",\n      \"category\": \"Programming\",\n      \"yearPublished\": 2019,\n      \"publisher\": \"Addison-Wesley\",\n      \"totalCopies\": 3,\n      \"availableCopies\": 2,\n      \"createdAt\": \"2026-08-29T00:00:00.000Z\"\n    }\n  ],\n  \"meta\": {\n    \"page\": 1,\n    \"perPage\": 10,\n    \"totalItems\": 8,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get Book Categories",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/books/categories", "host": ["{{baseUrl}}"], "path": ["books", "categories"] },
+            "url": {
+              "raw": "{{baseUrl}}/books/categories",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books",
+                "categories"
+              ]
+            },
             "description": "Daftar semua kategori buku yang ada."
-          }
+          },
+          "response": [
+            {
+              "name": "Categories Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    \"Business\",\n    \"Fiction\",\n    \"History\",\n    \"Programming\",\n    \"Science\"\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Get Book by ID",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/books/:id", "host": ["{{baseUrl}}"], "path": ["books", ":id"], "variable": [{ "key": "id", "value": "" }] },
+            "url": {
+              "raw": "{{baseUrl}}/books/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
             "description": "Detail satu buku berdasarkan UUID."
-          }
+          },
+          "response": [
+            {
+              "name": "Book Detail Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"uuid\",\n    \"title\": \"Sapiens\",\n    \"author\": \"Yuval Noah Harari\",\n    \"isbn\": \"9780062316097\",\n    \"category\": \"History\",\n    \"yearPublished\": 2015,\n    \"publisher\": \"Harper\",\n    \"totalCopies\": 3,\n    \"availableCopies\": 3\n  }\n}"
+            },
+            {
+              "name": "Book Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Buku tidak ditemukan\",\n  \"errors\": [\n    {\n      \"code\": \"NOT_FOUND\",\n      \"message\": \"Buku dengan ID abc123 tidak ditemukan\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Create Book",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Clean Coder\",\n  \"author\": \"Robert C. Martin\",\n  \"isbn\": \"9780137081073\",\n  \"publisher\": \"Prentice Hall\",\n  \"yearPublished\": 2011,\n  \"category\": \"Programming\",\n  \"totalCopies\": 2\n}" },
-            "url": { "raw": "{{baseUrl}}/books", "host": ["{{baseUrl}}"], "path": ["books"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Clean Coder\",\n  \"author\": \"Robert C. Martin\",\n  \"isbn\": \"9780137081073\",\n  \"publisher\": \"Prentice Hall\",\n  \"yearPublished\": 2011,\n  \"category\": \"Programming\",\n  \"totalCopies\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books"
+              ]
+            },
             "description": "Tambah buku baru. `availableCopies` otomatis sama dengan `totalCopies`."
-          }
+          },
+          "response": [
+            {
+              "name": "Book Created",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Buku berhasil ditambahkan\",\n  \"data\": {\n    \"id\": \"uuid\",\n    \"title\": \"Clean Code\",\n    \"author\": \"Robert C. Martin\",\n    \"isbn\": \"9780132350884\",\n    \"category\": \"Programming\",\n    \"totalCopies\": 5,\n    \"availableCopies\": 5\n  }\n}"
+            },
+            {
+              "name": "Duplicate ISBN",
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Data duplikat ditemukan\",\n  \"errors\": [\n    {\n      \"code\": \"CONFLICT\",\n      \"field\": \"isbn\",\n      \"message\": \"ISBN \\\"9780132350884\\\" sudah terdaftar\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Validasi gagal\",\n  \"errors\": [\n    {\n      \"code\": \"VALIDATION_ERROR\",\n      \"field\": \"title\",\n      \"message\": \"Judul buku wajib diisi\"\n    },\n    {\n      \"code\": \"VALIDATION_ERROR\",\n      \"field\": \"isbn\",\n      \"message\": \"Format ISBN tidak valid\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Update Book",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"title\": \"The Clean Coder\",\n  \"author\": \"Robert C. Martin\",\n  \"isbn\": \"9780137081073\",\n  \"publisher\": \"Prentice Hall\",\n  \"yearPublished\": 2011,\n  \"category\": \"Programming\",\n  \"totalCopies\": 3\n}" },
-            "url": { "raw": "{{baseUrl}}/books/:id", "host": ["{{baseUrl}}"], "path": ["books", ":id"], "variable": [{ "key": "id", "value": "" }] }
-          }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Clean Coder\",\n  \"author\": \"Robert C. Martin\",\n  \"isbn\": \"9780137081073\",\n  \"publisher\": \"Prentice Hall\",\n  \"yearPublished\": 2011,\n  \"category\": \"Programming\",\n  \"totalCopies\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/books/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Book Updated",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Buku berhasil diperbarui\",\n  \"data\": {\n    \"id\": \"uuid\",\n    \"title\": \"Clean Code (2nd Edition)\",\n    \"totalCopies\": 5,\n    \"availableCopies\": 5\n  }\n}"
+            },
+            {
+              "name": "Book Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Buku tidak ditemukan\",\n  \"errors\": [\n    {\n      \"code\": \"NOT_FOUND\",\n      \"message\": \"Buku dengan ID abc123 tidak ditemukan\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Duplicate ISBN",
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Data duplikat ditemukan\",\n  \"errors\": [\n    {\n      \"code\": \"CONFLICT\",\n      \"field\": \"isbn\",\n      \"message\": \"ISBN sudah digunakan oleh buku lain\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Delete Book",
           "request": {
             "method": "DELETE",
-            "url": { "raw": "{{baseUrl}}/books/:id", "host": ["{{baseUrl}}"], "path": ["books", ":id"], "variable": [{ "key": "id", "value": "" }] },
+            "url": {
+              "raw": "{{baseUrl}}/books/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "books",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
             "description": "Hapus buku. Akan gagal jika buku masih memiliki pinjaman aktif."
-          }
+          },
+          "response": [
+            {
+              "name": "Book Deleted",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Buku berhasil dihapus\"\n}"
+            },
+            {
+              "name": "Book Has Loans",
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Buku tidak dapat dihapus karena memiliki riwayat peminjaman\",\n  \"errors\": [\n    {\n      \"code\": \"BAD_REQUEST\",\n      \"message\": \"Buku memiliki riwayat peminjaman\"\n    }\n  ]\n}"
+            }
+          ]
         }
       ]
     },
@@ -137,47 +585,276 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/members?page=1&perPage=10",
-              "host": ["{{baseUrl}}"], "path": ["members"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "members"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "perPage", "value": "10" },
-                { "key": "search", "value": "", "disabled": true },
-                { "key": "status", "value": "ACTIVE", "disabled": true, "description": "ACTIVE or INACTIVE" }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "ACTIVE",
+                  "disabled": true,
+                  "description": "ACTIVE or INACTIVE"
+                }
               ]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "List Members Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"uuid\",\n      \"memberNumber\": \"MBR-2026-001\",\n      \"name\": \"Budi Santoso\",\n      \"email\": \"budi@email.com\",\n      \"phone\": \"081234567890\",\n      \"status\": \"ACTIVE\",\n      \"createdAt\": \"2026-08-29T00:00:00.000Z\"\n    }\n  ],\n  \"meta\": {\n    \"page\": 1,\n    \"perPage\": 10,\n    \"totalItems\": 6,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get Member by ID",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/members/:id", "host": ["{{baseUrl}}"], "path": ["members", ":id"], "variable": [{ "key": "id", "value": "" }] }
-          }
+            "url": {
+              "raw": "{{baseUrl}}/members/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "members",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Member Detail Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"uuid\",\n    \"memberNumber\": \"MBR-2026-001\",\n    \"name\": \"Budi Santoso\",\n    \"email\": \"budi@email.com\",\n    \"phone\": \"081234567890\",\n    \"status\": \"ACTIVE\",\n    \"activeLoans\": 1,\n    \"totalLoans\": 3\n  }\n}"
+            },
+            {
+              "name": "Member Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Anggota tidak ditemukan\",\n  \"errors\": [\n    {\n      \"code\": \"NOT_FOUND\",\n      \"message\": \"Anggota dengan ID abc123 tidak ditemukan\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Create Member",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"John Doe\",\n  \"memberNumber\": \"MBR-2026-007\",\n  \"email\": \"john@email.com\",\n  \"phone\": \"081234567899\",\n  \"status\": \"ACTIVE\"\n}" },
-            "url": { "raw": "{{baseUrl}}/members", "host": ["{{baseUrl}}"], "path": ["members"] }
-          }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"memberNumber\": \"MBR-2026-007\",\n  \"email\": \"john@email.com\",\n  \"phone\": \"081234567899\",\n  \"status\": \"ACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/members",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "members"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Member Created",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Anggota berhasil ditambahkan\",\n  \"data\": {\n    \"id\": \"uuid\",\n    \"memberNumber\": \"MBR-2026-021\",\n    \"name\": \"Andi Prasetya\",\n    \"email\": \"andi@email.com\",\n    \"phone\": \"081234567899\",\n    \"status\": \"ACTIVE\"\n  }\n}"
+            },
+            {
+              "name": "Duplicate Email",
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Data duplikat ditemukan\",\n  \"errors\": [\n    {\n      \"code\": \"CONFLICT\",\n      \"field\": \"email\",\n      \"message\": \"Email \\\"budi@email.com\\\" sudah terdaftar\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Validation Error",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Validasi gagal\",\n  \"errors\": [\n    {\n      \"code\": \"VALIDATION_ERROR\",\n      \"field\": \"email\",\n      \"message\": \"Format email tidak valid\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Update Member",
           "request": {
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"John Doe Updated\",\n  \"memberNumber\": \"MBR-2026-007\",\n  \"email\": \"john@email.com\",\n  \"phone\": \"081234567899\",\n  \"status\": \"INACTIVE\"\n}" },
-            "url": { "raw": "{{baseUrl}}/members/:id", "host": ["{{baseUrl}}"], "path": ["members", ":id"], "variable": [{ "key": "id", "value": "" }] }
-          }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe Updated\",\n  \"memberNumber\": \"MBR-2026-007\",\n  \"email\": \"john@email.com\",\n  \"phone\": \"081234567899\",\n  \"status\": \"INACTIVE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/members/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "members",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Member Updated",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Anggota berhasil diperbarui\",\n  \"data\": {\n    \"id\": \"uuid\",\n    \"memberNumber\": \"MBR-2026-001\",\n    \"name\": \"Budi Santoso\",\n    \"status\": \"ACTIVE\"\n  }\n}"
+            },
+            {
+              "name": "Member Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Anggota tidak ditemukan\",\n  \"errors\": [\n    {\n      \"code\": \"NOT_FOUND\",\n      \"message\": \"Anggota tidak ditemukan\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Delete Member",
           "request": {
             "method": "DELETE",
-            "url": { "raw": "{{baseUrl}}/members/:id", "host": ["{{baseUrl}}"], "path": ["members", ":id"], "variable": [{ "key": "id", "value": "" }] }
-          }
+            "url": {
+              "raw": "{{baseUrl}}/members/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "members",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Member Deleted",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Anggota berhasil dihapus\"\n}"
+            },
+            {
+              "name": "Member Has Active Loans",
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Anggota \\\"Budi Santoso\\\" masih memiliki 2 buku yang belum dikembalikan\",\n  \"errors\": [\n    {\n      \"code\": \"MEMBER_HAS_ACTIVE_LOANS\",\n      \"message\": \"Anggota memiliki peminjaman aktif\"\n    }\n  ]\n}"
+            }
+          ]
         }
       ]
     },
@@ -190,15 +867,50 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/loans?page=1&perPage=10",
-              "host": ["{{baseUrl}}"], "path": ["loans"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "loans"
+              ],
               "query": [
-                { "key": "page", "value": "1" },
-                { "key": "perPage", "value": "10" },
-                { "key": "status", "value": "", "disabled": true, "description": "BORROWED, OVERDUE, or RETURNED" },
-                { "key": "memberId", "value": "", "disabled": true }
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "perPage",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true,
+                  "description": "BORROWED, OVERDUE, or RETURNED"
+                },
+                {
+                  "key": "memberId",
+                  "value": "",
+                  "disabled": true
+                }
               ]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "List Loans Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"uuid\",\n      \"memberId\": \"m-uuid\",\n      \"bookId\": \"b-uuid\",\n      \"loanDate\": \"2026-08-20T00:00:00.000Z\",\n      \"dueDate\": \"2026-09-03T00:00:00.000Z\",\n      \"returnDate\": null,\n      \"status\": \"BORROWED\",\n      \"fine\": 0,\n      \"member\": {\n        \"id\": \"m-uuid\",\n        \"name\": \"Budi Santoso\",\n        \"memberNumber\": \"MBR-2026-001\"\n      },\n      \"book\": {\n        \"id\": \"b-uuid\",\n        \"title\": \"Sapiens\",\n        \"author\": \"Yuval Noah Harari\",\n        \"isbn\": \"9780062316097\"\n      }\n    }\n  ],\n  \"meta\": {\n    \"page\": 1,\n    \"perPage\": 10,\n    \"totalItems\": 5,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ]
         },
         {
           "name": "List Loans - Active (BORROWED)",
@@ -206,10 +918,35 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/loans?status=BORROWED",
-              "host": ["{{baseUrl}}"], "path": ["loans"],
-              "query": [{ "key": "status", "value": "BORROWED" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "loans"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "BORROWED"
+                }
+              ]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "List Loans Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"uuid\",\n      \"memberId\": \"m-uuid\",\n      \"bookId\": \"b-uuid\",\n      \"loanDate\": \"2026-08-20T00:00:00.000Z\",\n      \"dueDate\": \"2026-09-03T00:00:00.000Z\",\n      \"returnDate\": null,\n      \"status\": \"BORROWED\",\n      \"fine\": 0,\n      \"member\": {\n        \"id\": \"m-uuid\",\n        \"name\": \"Budi Santoso\",\n        \"memberNumber\": \"MBR-2026-001\"\n      },\n      \"book\": {\n        \"id\": \"b-uuid\",\n        \"title\": \"Sapiens\",\n        \"author\": \"Yuval Noah Harari\",\n        \"isbn\": \"9780062316097\"\n      }\n    }\n  ],\n  \"meta\": {\n    \"page\": 1,\n    \"perPage\": 10,\n    \"totalItems\": 5,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ]
         },
         {
           "name": "List Loans - Overdue",
@@ -217,10 +954,35 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/loans?status=OVERDUE",
-              "host": ["{{baseUrl}}"], "path": ["loans"],
-              "query": [{ "key": "status", "value": "OVERDUE" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "loans"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "OVERDUE"
+                }
+              ]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "List Loans Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"uuid\",\n      \"memberId\": \"m-uuid\",\n      \"bookId\": \"b-uuid\",\n      \"loanDate\": \"2026-08-20T00:00:00.000Z\",\n      \"dueDate\": \"2026-09-03T00:00:00.000Z\",\n      \"returnDate\": null,\n      \"status\": \"BORROWED\",\n      \"fine\": 0,\n      \"member\": {\n        \"id\": \"m-uuid\",\n        \"name\": \"Budi Santoso\",\n        \"memberNumber\": \"MBR-2026-001\"\n      },\n      \"book\": {\n        \"id\": \"b-uuid\",\n        \"title\": \"Sapiens\",\n        \"author\": \"Yuval Noah Harari\",\n        \"isbn\": \"9780062316097\"\n      }\n    }\n  ],\n  \"meta\": {\n    \"page\": 1,\n    \"perPage\": 10,\n    \"totalItems\": 5,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ]
         },
         {
           "name": "List Loans - Returned",
@@ -228,35 +990,243 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/loans?status=RETURNED",
-              "host": ["{{baseUrl}}"], "path": ["loans"],
-              "query": [{ "key": "status", "value": "RETURNED" }]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "loans"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "RETURNED"
+                }
+              ]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "List Loans Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"uuid\",\n      \"memberId\": \"m-uuid\",\n      \"bookId\": \"b-uuid\",\n      \"loanDate\": \"2026-08-20T00:00:00.000Z\",\n      \"dueDate\": \"2026-09-03T00:00:00.000Z\",\n      \"returnDate\": null,\n      \"status\": \"BORROWED\",\n      \"fine\": 0,\n      \"member\": {\n        \"id\": \"m-uuid\",\n        \"name\": \"Budi Santoso\",\n        \"memberNumber\": \"MBR-2026-001\"\n      },\n      \"book\": {\n        \"id\": \"b-uuid\",\n        \"title\": \"Sapiens\",\n        \"author\": \"Yuval Noah Harari\",\n        \"isbn\": \"9780062316097\"\n      }\n    }\n  ],\n  \"meta\": {\n    \"page\": 1,\n    \"perPage\": 10,\n    \"totalItems\": 5,\n    \"totalPages\": 1\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get Loan by ID",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/loans/:id", "host": ["{{baseUrl}}"], "path": ["loans", ":id"], "variable": [{ "key": "id", "value": "" }] }
-          }
+            "url": {
+              "raw": "{{baseUrl}}/loans/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "loans",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Loan Detail Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"uuid\",\n    \"loanDate\": \"2026-08-20T00:00:00.000Z\",\n    \"dueDate\": \"2026-09-03T00:00:00.000Z\",\n    \"status\": \"BORROWED\",\n    \"fine\": 0,\n    \"member\": {\n      \"name\": \"Budi Santoso\",\n      \"memberNumber\": \"MBR-2026-001\"\n    },\n    \"book\": {\n      \"title\": \"Sapiens\",\n      \"author\": \"Yuval Noah Harari\"\n    }\n  }\n}"
+            },
+            {
+              "name": "Loan Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Peminjaman tidak ditemukan\",\n  \"errors\": [\n    {\n      \"code\": \"NOT_FOUND\",\n      \"message\": \"Peminjaman dengan ID abc123 tidak ditemukan\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Create Loan (Borrow Book) ⭐",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"memberId\": \"<member-uuid>\",\n  \"bookId\": \"<book-uuid>\"\n}" },
-            "url": { "raw": "{{baseUrl}}/loans", "host": ["{{baseUrl}}"], "path": ["loans"] },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"memberId\": \"<member-uuid>\",\n  \"bookId\": \"<book-uuid>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/loans",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "loans"
+              ]
+            },
             "description": "Proses peminjaman buku. Sistem memvalidasi:\n- Stok buku tersedia\n- Anggota berstatus AKTIF\n- Anggota belum mencapai batas 3 pinjaman aktif\n- Anggota tidak memiliki buku overdue\n- Anggota tidak sedang meminjam buku yang sama\n\nSemua validasi yang gagal dikembalikan sekaligus (bukan hanya yang pertama)."
-          }
+          },
+          "response": [
+            {
+              "name": "Loan Created",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Peminjaman berhasil dibuat\",\n  \"data\": {\n    \"id\": \"uuid\",\n    \"loanDate\": \"2026-08-30T00:00:00.000Z\",\n    \"dueDate\": \"2026-09-13T00:00:00.000Z\",\n    \"status\": \"BORROWED\",\n    \"fine\": 0,\n    \"member\": {\n      \"name\": \"Budi Santoso\"\n    },\n    \"book\": {\n      \"title\": \"Sapiens\"\n    }\n  }\n}"
+            },
+            {
+              "name": "Book Out of Stock",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Peminjaman tidak dapat dilakukan\",\n  \"errors\": [\n    {\n      \"code\": \"BOOK_OUT_OF_STOCK\",\n      \"message\": \"Buku \\\"Sapiens\\\" tidak tersedia (stok habis)\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Multiple Violations",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Peminjaman tidak dapat dilakukan\",\n  \"errors\": [\n    {\n      \"code\": \"MEMBER_INACTIVE\",\n      \"message\": \"Anggota \\\"Rudi\\\" berstatus nonaktif dan tidak dapat meminjam buku\"\n    },\n    {\n      \"code\": \"BOOK_OUT_OF_STOCK\",\n      \"message\": \"Buku \\\"Sapiens\\\" tidak tersedia (stok habis)\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Max Loans Reached",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Peminjaman tidak dapat dilakukan\",\n  \"errors\": [\n    {\n      \"code\": \"MEMBER_MAX_LOANS_REACHED\",\n      \"message\": \"Anggota \\\"Budi\\\" sudah mencapai batas maksimal peminjaman (3 buku)\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "Member Has Overdue",
+              "status": "Unprocessable Entity",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Peminjaman tidak dapat dilakukan\",\n  \"errors\": [\n    {\n      \"code\": \"MEMBER_HAS_OVERDUE\",\n      \"message\": \"Anggota \\\"Budi\\\" memiliki buku yang belum dikembalikan dan sudah melewati batas waktu\"\n    }\n  ]\n}"
+            }
+          ]
         },
         {
           "name": "Return Book (Pengembalian) ⭐",
           "request": {
             "method": "PATCH",
-            "url": { "raw": "{{baseUrl}}/loans/:id/return", "host": ["{{baseUrl}}"], "path": ["loans", ":id", "return"], "variable": [{ "key": "id", "value": "" }] },
+            "url": {
+              "raw": "{{baseUrl}}/loans/:id/return",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "loans",
+                ":id",
+                "return"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
             "description": "Proses pengembalian buku. Tidak perlu request body.\n- Tanggal pengembalian = hari ini (server time)\n- Keterlambatan dan denda dihitung otomatis\n- Stok buku bertambah kembali\n- Pengembalian kedua kali ditolak dengan error LOAN_ALREADY_RETURNED"
-          }
+          },
+          "response": [
+            {
+              "name": "Returned On Time",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Buku berhasil dikembalikan tepat waktu\",\n  \"data\": {\n    \"id\": \"uuid\",\n    \"returnDate\": \"2026-08-30T00:00:00.000Z\",\n    \"status\": \"RETURNED\",\n    \"fine\": 0,\n    \"daysLate\": 0,\n    \"book\": {\n      \"title\": \"Sapiens\"\n    }\n  }\n}"
+            },
+            {
+              "name": "Returned Late (With Fine)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Buku berhasil dikembalikan (terlambat 5 hari)\",\n  \"data\": {\n    \"id\": \"uuid\",\n    \"returnDate\": \"2026-09-18T00:00:00.000Z\",\n    \"status\": \"RETURNED\",\n    \"fine\": 25000,\n    \"daysLate\": 5,\n    \"book\": {\n      \"title\": \"Sapiens\"\n    }\n  }\n}"
+            },
+            {
+              "name": "Already Returned",
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Peminjaman ini sudah dikembalikan\",\n  \"errors\": [\n    {\n      \"code\": \"LOAN_ALREADY_RETURNED\",\n      \"message\": \"Buku \\\"Sapiens\\\" sudah dikembalikan pada 2026-08-30\"\n    }\n  ]\n}"
+            }
+          ]
         }
       ]
     },
@@ -267,9 +1237,32 @@
           "name": "Get Dashboard Stats",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/dashboard", "host": ["{{baseUrl}}"], "path": ["dashboard"] },
+            "url": {
+              "raw": "{{baseUrl}}/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard"
+              ]
+            },
             "description": "Statistik ringkasan: total buku, anggota aktif, peminjaman aktif, buku overdue, total denda."
-          }
+          },
+          "response": [
+            {
+              "name": "Dashboard Stats",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"books\": {\n      \"total\": 8,\n      \"available\": 6,\n      \"borrowed\": 2\n    },\n    \"members\": {\n      \"total\": 6,\n      \"active\": 5,\n      \"inactive\": 1\n    },\n    \"loans\": {\n      \"active\": 3,\n      \"overdue\": 1,\n      \"returned\": 5\n    },\n    \"recentActivity\": []\n  }\n}"
+            }
+          ]
         }
       ]
     }

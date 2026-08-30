@@ -13,7 +13,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Library, Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
+import { Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -72,8 +73,8 @@ export default function LoginPage() {
 
       <Card className="w-full max-w-md relative z-10 border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl rounded-3xl p-2 sm:p-4">
         <CardHeader className="text-center space-y-4 pb-2">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-[#8d1231] to-[#cc1f39] flex items-center justify-center shadow-xl shadow-[#8d1231]/30 border border-white/20">
-            <Library className="h-8 w-8 text-white" />
+          <div className="mx-auto w-16 h-16 rounded-2xl bg-white flex items-center justify-center shadow-xl shadow-black/20 p-2.5 ring-4 ring-white/10">
+            <Image src="/logo-transparent.png" alt="Habitus Library" width={44} height={44} className="object-contain" priority />
           </div>
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8d1231]/20 border border-[#8d1231]/40 text-[#ff8093] text-[11px] font-black uppercase tracking-widest mb-2">

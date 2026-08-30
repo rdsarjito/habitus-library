@@ -34,14 +34,6 @@ export class MemberService {
     // Check for duplicates
     const duplicates: { field: string; message: string }[] = [];
 
-    const existingNumber = await memberRepository.findByMemberNumber(input.memberNumber);
-    if (existingNumber) {
-      duplicates.push({
-        field: 'memberNumber',
-        message: `Nomor anggota ${input.memberNumber} sudah terdaftar`,
-      });
-    }
-
     const existingEmail = await memberRepository.findByEmail(input.email);
     if (existingEmail) {
       duplicates.push({
@@ -54,7 +46,10 @@ export class MemberService {
       throw new DuplicateEntryError(duplicates);
     }
 
-    return memberRepository.create(input);
+    // Auto-generate member number
+    const memberNumber = await memberRepository.generateMemberNumber();
+
+    return memberRepository.create({ ...input, memberNumber });
   }
 
   async update(id: string, input: UpdateMemberInput) {

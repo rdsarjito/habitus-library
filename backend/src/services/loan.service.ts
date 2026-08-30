@@ -13,6 +13,7 @@ export class LoanService {
     const pagination = parsePagination(query.page, query.perPage);
 
     const { data, total } = await loanRepository.findAll({
+      search: query.search,
       memberId: query.memberId,
       bookId: query.bookId,
       status: query.status,

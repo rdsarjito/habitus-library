@@ -87,7 +87,7 @@ export interface BookQuery {
 
 export interface Member {
   id: string;
-  memberNumber: string;
+  memberNumber?: string;
   name: string;
   email: string;
   phone: string;
@@ -99,7 +99,7 @@ export interface Member {
 }
 
 export interface MemberFormData {
-  memberNumber: string;
+  memberNumber?: string;
   name: string;
   email: string;
   phone: string;
@@ -135,7 +135,7 @@ export interface Loan {
   member: {
     id: string;
     name: string;
-    memberNumber: string;
+    memberNumber?: string;
     email?: string;
     phone?: string;
   };
@@ -158,6 +158,7 @@ export interface ReturnLoanRequest {
 }
 
 export interface LoanQuery {
+  search?: string;
   memberId?: string;
   bookId?: string;
   status?: 'BORROWED' | 'RETURNED' | 'OVERDUE';

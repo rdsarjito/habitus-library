@@ -76,7 +76,9 @@ export function MemberFormDialog({ open, onOpenChange, member, onSuccess }: Memb
         await membersApi.update(member!.id, form);
         toast.success('Anggota berhasil diperbarui');
       } else {
-        await membersApi.create(form);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { memberNumber: _mn, ...createPayload } = form;
+        await membersApi.create(createPayload);
         toast.success('Anggota berhasil ditambahkan');
       }
       onOpenChange(false);
@@ -117,17 +119,20 @@ export function MemberFormDialog({ open, onOpenChange, member, onSuccess }: Memb
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="memberNumber" className="text-xs font-bold text-slate-700">Nomor Anggota</Label>
-              <Input
-                id="memberNumber"
-                value={form.memberNumber}
-                onChange={(e) => handleChange('memberNumber', e.target.value)}
-                placeholder="MBR-2026-XXX"
-                className="rounded-xl border-slate-200 focus:border-[#8d1231] focus:ring-[#8d1231]/10 text-sm font-mono"
-              />
-              {errors.memberNumber && <p className="text-xs font-semibold text-red-500">{errors.memberNumber}</p>}
-            </div>
+            {member && (
+              <div className="space-y-1.5">
+                <Label htmlFor="memberNumber" className="text-xs font-bold text-slate-700">Nomor Anggota</Label>
+                <Input
+                  id="memberNumber"
+                  value={form.memberNumber}
+                  onChange={(e) => handleChange('memberNumber', e.target.value)}
+                  className="rounded-xl border-slate-200 focus:border-[#8d1231] focus:ring-[#8d1231]/10 text-sm font-mono"
+                  readOnly
+                  disabled
+                />
+                <p className="text-[10px] text-slate-400 font-semibold">Nomor anggota tidak dapat diubah</p>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label htmlFor="name" className="text-xs font-bold text-slate-700">Nama Lengkap</Label>

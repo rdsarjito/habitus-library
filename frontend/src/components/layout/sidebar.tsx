@@ -1,4 +1,6 @@
-'use client';
+'use client'
+
+import Image from 'next/image';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -33,8 +35,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     <>
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 px-5 border-b border-white/10">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 shadow-sm">
-          <Library className="h-5 w-5 text-white" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white shadow-sm overflow-hidden p-1">
+          <Image src="/logo-transparent.png" alt="Habitus Library" width={28} height={28} className="object-contain" />
         </div>
         <div className="flex-1">
           <h1 className="text-sm font-black text-white tracking-tight">Perpustakaan</h1>

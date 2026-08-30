@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import { PaginationParams } from '../utils/pagination';
 
 interface LoanFilters {
+  search?: string;
   memberId?: string;
   bookId?: string;
   status?: 'BORROWED' | 'RETURNED' | 'OVERDUE';
@@ -16,6 +17,16 @@ export class LoanRepository {
     const where: Prisma.LoanWhereInput = {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    if (filters.search) {
+      where.OR = [
+        { member: { name: { contains: filters.search, mode: 'insensitive' } } },
+        { member: { memberNumber: { contains: filters.search, mode: 'insensitive' } } },
+        { book: { title: { contains: filters.search, mode: 'insensitive' } } },
+        { book: { author: { contains: filters.search, mode: 'insensitive' } } },
+        { book: { isbn: { contains: filters.search, mode: 'insensitive' } } },
+      ];
+    }
 
     if (filters.memberId) {
       where.memberId = filters.memberId;

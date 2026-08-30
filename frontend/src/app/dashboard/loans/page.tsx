@@ -74,6 +74,7 @@ export default function LoansPage() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchValue, setSearchValue] = useState('');
 
   const [query, setQuery] = useState<LoanQuery>({
     page: 1,
@@ -110,6 +111,11 @@ export default function LoansPage() {
       status: status === 'all' ? undefined : (status as LoanQuery['status']),
       page: 1,
     }));
+  };
+
+  const handleSearchChange = (val: string) => {
+    setSearchValue(val);
+    setQuery((prev) => ({ ...prev, search: val || undefined, page: 1 }));
   };
 
   const handleReset = () => {
@@ -159,9 +165,9 @@ export default function LoansPage() {
 
       {/* Filter Bar */}
       <FilterBar
-        searchPlaceholder="Filter dan urutkan status transaksi peminjaman..."
-        searchValue=""
-        onSearchChange={() => {}}
+        searchPlaceholder="Cari nama anggota, judul buku, penulis, atau ISBN..."
+        searchValue={searchValue}
+        onSearchChange={handleSearchChange}
         onReset={handleReset}
         isLoading={loading}
       >
@@ -270,6 +276,7 @@ export default function LoansPage() {
                       <td className="min-w-[200px]">
                         <p className="font-bold text-slate-800 line-clamp-1">{loan.book?.title}</p>
                         <p className="text-[11px] font-medium text-slate-400">{loan.book?.author}</p>
+                        <p className="text-[10px] font-mono text-slate-300">ISBN: {loan.book?.isbn}</p>
                       </td>
                       <td className="text-xs font-semibold text-slate-600">
                         {formatDate(loan.loanDate)}

@@ -13,6 +13,7 @@ export const returnLoanSchema = z.object({
 });
 
 export const loanQuerySchema = z.object({
+  search: z.string().optional(),
   memberId: z.string().uuid().optional(),
   bookId: z.string().uuid().optional(),
   status: z.enum(['BORROWED', 'RETURNED', 'OVERDUE']).optional(),

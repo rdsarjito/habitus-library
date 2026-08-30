@@ -66,6 +66,28 @@ export class MemberRepository {
     return { ...member, activeLoansCount, overdueLoansCount };
   }
 
+
+  async generateMemberNumber(): Promise<string> {
+    const year = new Date().getFullYear();
+    const prefix = `MBR-${year}-`;
+
+    const lastMember = await prisma.member.findFirst({
+      where: { memberNumber: { startsWith: prefix } },
+      orderBy: { memberNumber: 'desc' },
+      select: { memberNumber: true },
+    });
+
+    let nextNum = 1;
+    if (lastMember?.memberNumber) {
+      const match = lastMember.memberNumber.match(/MBR-\d{4}-(\d+)/);
+      if (match) {
+        nextNum = parseInt(match[1], 10) + 1;
+      }
+    }
+
+    return `${prefix}${String(nextNum).padStart(3, '0')}`;
+  }
+
   async findByMemberNumber(memberNumber: string, excludeId?: string) {
     return prisma.member.findFirst({
       where: {

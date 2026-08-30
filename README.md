@@ -3,6 +3,8 @@
 > **🔗 Live Demo:** [habitus.ramadhaninursarjito.tech](https://habitus.ramadhaninursarjito.tech) — Login: `admin` / `admin123` | CI/CD ✅
 > 
 > **📡 API Health:** [habitus-api.ramadhaninursarjito.tech/api/health](https://habitus-api.ramadhaninursarjito.tech/api/health)
+> 
+> **📖 API Documentation:** [docs/API.md](./docs/API.md)
 
 A full-stack web application for managing library books, members, and loan transactions. Built as a take-home assessment project demonstrating clean architecture, business logic implementation, and modern web development practices.
 
@@ -355,6 +357,23 @@ This ensures status is always accurate without requiring scheduled jobs.
 - Members with existing loan records cannot be deleted (ON DELETE RESTRICT)
 - When updating `totalCopies`, the value cannot be less than currently borrowed copies
 
+## Assumptions
+
+The following assumptions were made during development:
+
+| # | Assumption |
+|---|-----------|
+| A-1 | Maximum active loans per member: **3 books** |
+| A-2 | Loan duration: **14 days** from borrow date |
+| A-3 | Late fee: **Rp 1,000 per day** |
+| A-4 | `OVERDUE` status is **computed at query time** (not stored) — a loan is overdue when `status = BORROWED AND dueDate < today` |
+| A-5 | A member cannot borrow the same book twice simultaneously (`DUPLICATE_ACTIVE_LOAN`) |
+| A-6 | Books and members use **hard delete** with foreign key protection (cannot delete if active loans exist) |
+| A-7 | ISBN must be unique across all books |
+| A-8 | Due date is automatically calculated (borrower cannot set it manually) |
+| A-9 | Single role system — all authenticated users are "staff" (petugas) |
+| A-10 | Return date is always today (server time) — cannot be backdated |
+
 ## Design Decisions
 
 1. **Computed overdue status** — Instead of storing `OVERDUE` as a database enum, overdue is calculated at query time. This eliminates the need for scheduled jobs and ensures accuracy.
@@ -400,6 +419,31 @@ This starts 3 services:
 On first startup, the backend automatically runs database migrations and seeds sample data.
 
 Login with: **admin** / **admin123**
+
+### Run Migration & Seeder
+
+```bash
+# Migrations run automatically on container start via docker-entrypoint.sh
+# To run manually inside the container:
+docker compose exec backend npx prisma migrate deploy
+
+# Run seeder (development only — uses tsx)
+docker compose exec backend npm run seed
+
+# Reset database and re-seed
+docker compose down -v
+docker compose up --build
+```
+
+### Run Tests
+
+```bash
+# All tests (30 unit tests)
+cd backend && npm test
+
+# With coverage
+cd backend && npm run test:coverage
+```
 
 ### Useful Commands
 

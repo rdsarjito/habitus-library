@@ -28,31 +28,36 @@ A full-stack web application for managing library books, members, and loan trans
 - [Running with Docker](#running-with-docker)
 - [Production Deployment](#production-deployment)
 - [Known Limitations](#known-limitations)
+- [API Testing Guide](#api-testing-guide)
 - [AI Assistance Disclosure](#ai-assistance-disclosure)
+
+---
 
 ## Tech Stack
 
 ### Backend
-| Technology | Purpose |
-|-----------|---------|
-| [Node.js](https://nodejs.org/) + [TypeScript](https://www.typescriptlang.org/) | Runtime and type safety |
-| [Express.js 5](https://expressjs.com/) | HTTP framework |
-| [PostgreSQL](https://www.postgresql.org/) | Relational database |
-| [Prisma 6](https://www.prisma.io/) | ORM with type-safe queries and migrations |
-| [Zod](https://zod.dev/) | Runtime schema validation for inputs and environment |
-| [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken) | Authentication tokens |
-| [bcryptjs](https://github.com/dcodeIO/bcrypt.js) | Password hashing |
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| [Node.js](https://nodejs.org/) + [TypeScript](https://www.typescriptlang.org/) | v22 + v5 | Runtime and type safety |
+| [Express.js](https://expressjs.com/) | v5 | HTTP framework |
+| [PostgreSQL](https://www.postgresql.org/) | v16 | Relational database |
+| [Prisma](https://www.prisma.io/) | v6 | ORM with type-safe queries and migrations |
+| [Zod](https://zod.dev/) | v3 | Runtime schema validation for inputs and environment |
+| [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken) | v9 | Authentication tokens |
+| [bcryptjs](https://github.com/dcodeIO/bcrypt.js) | v3 | Password hashing |
+| [Swagger UI Express](https://github.com/scottie1984/swagger-ui-express) | v5 | Interactive API documentation |
+| [Vitest](https://vitest.dev/) | v4 | Unit testing framework |
 
 ### Frontend
-| Technology | Purpose |
-|-----------|---------|
-| [Next.js 16](https://nextjs.org/) | React framework (App Router) |
-| [Tailwind CSS 4](https://tailwindcss.com/) | Utility-first styling |
-| [shadcn/ui](https://ui.shadcn.com/) | Pre-built accessible UI components |
-| [Zustand](https://zustand-demo.pmnd.rs/) | Lightweight auth state management |
-| [Axios](https://axios-http.com/) | HTTP client with interceptors |
-| [TanStack React Query](https://tanstack.com/query) | Server state and caching |
-| [Lucide React](https://lucide.dev/) | Icon library |
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| [Next.js](https://nextjs.org/) | v16 | React framework (App Router) |
+| [Tailwind CSS](https://tailwindcss.com/) | v4 | Utility-first styling |
+| [shadcn/ui](https://ui.shadcn.com/) | latest | Pre-built accessible UI components |
+| [Zustand](https://zustand-demo.pmnd.rs/) | v5 | Lightweight auth state management |
+| [Axios](https://axios-http.com/) | v1 | HTTP client with interceptors |
+| [TanStack React Query](https://tanstack.com/query) | v5 | Server state and caching |
+| [Lucide React](https://lucide.dev/) | v0.x | Icon library |
 
 ### Stack Rationale
 
@@ -63,7 +68,22 @@ A full-stack web application for managing library books, members, and loan trans
 - **Zod** for both frontend and backend validation: single schema definition, runtime type safety.
 
 
+---
+
 ## Architecture Overview
+
+The project follows a **Layered Architecture** with clear separation of concerns. Each layer has a single responsibility and communicates only with the layer directly below it.
+
+Key architectural patterns implemented:
+
+- **Layered Architecture** — Routes → Middleware → Controller → Service → Repository → Database
+- **Repository Pattern** — All database queries are isolated in repository classes, making the service layer independent of the ORM
+- **Pessimistic Locking** — `SELECT FOR UPDATE` within transactions prevents race conditions when multiple staff process loans concurrently
+- **Consistent Error Envelope** — All errors return `{ success: false, message, errors: [{ code, field, message }] }` — violations are aggregated and returned all at once, not sequentially
+- **Environment Validation at Startup** — All environment variables are validated by Zod at boot time, preventing silent misconfigurations
+- **Configurable Business Rules** — Max active loans, loan duration, and fine per day are driven by environment variables, not hardcoded
+
+---
 
 ### Application Architecture
 
@@ -153,6 +173,8 @@ POST /api/v1/loans
      +--> 201 Created { success: true, data: { loan } }
 ```
 
+
+---
 
 ## Database Design
 
@@ -252,6 +274,8 @@ erDiagram
 - Server-side input validation (Zod) with field-level error display
 - Environment-based configuration with validation
 
+---
+
 ## Project Structure
 
 ```
@@ -297,6 +321,8 @@ habitus-library/
 - **Controllers** handle HTTP concerns only (parse request, call service, send response).
 - **Services** contain all business logic and validation rules.
 - **Repositories** encapsulate database queries and transactions.
+
+---
 
 ## Getting Started
 
@@ -487,6 +513,155 @@ ports:
 ```
 
 
+---
+
+## API Endpoints
+
+> **Full API Documentation:**
+> - **Swagger UI (Interactive):** [habitus-api.ramadhaninursarjito.tech/api/docs](https://habitus-api.ramadhaninursarjito.tech/api/docs)
+> - **Markdown Reference:** [docs/API.md](./docs/API.md)
+
+All endpoints are prefixed with `/api/v1`. Protected endpoints require a JWT token in the `Authorization: Bearer <token>` header.
+
+### Authentication
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/auth/login` | No | Login with username and password |
+| `GET` | `/auth/me` | Yes | Get current user profile |
+
+### Books
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/books` | Yes | List books (search, filter, sort, paginate) |
+| `GET` | `/books/categories` | Yes | List distinct book categories |
+| `GET` | `/books/:id` | Yes | Get book by ID |
+| `POST` | `/books` | Yes | Create a new book |
+| `PUT` | `/books/:id` | Yes | Update a book |
+| `DELETE` | `/books/:id` | Yes | Delete a book (restricted if has loans) |
+
+### Members
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/members` | Yes | List members (search, filter, sort, paginate) |
+| `GET` | `/members/:id` | Yes | Get member by ID |
+| `POST` | `/members` | Yes | Create a new member |
+| `PUT` | `/members/:id` | Yes | Update a member |
+| `DELETE` | `/members/:id` | Yes | Delete a member (restricted if has loans) |
+
+### Loans
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/loans` | Yes | List loans (filter by status, member) |
+| `GET` | `/loans/:id` | Yes | Get loan by ID |
+| `POST` | `/loans` | Yes | Create a new loan (borrow a book) |
+| `PATCH` | `/loans/:id/return` | Yes | Return a borrowed book |
+
+### Dashboard
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/dashboard` | Yes | Get aggregated library statistics |
+
+---
+
+## Business Rules
+
+### Loan Creation
+
+A loan is rejected if **any** of the following conditions is true. All violations are returned simultaneously in the `errors` array:
+
+| Error Code | Condition |
+|-----------|-----------|
+| `MEMBER_NOT_FOUND` | Member ID does not exist |
+| `MEMBER_INACTIVE` | Member status is `INACTIVE` |
+| `MEMBER_MAX_LOANS_REACHED` | Member already has 3 active loans (configurable via `MAX_ACTIVE_LOANS`) |
+| `MEMBER_HAS_OVERDUE` | Member has at least one overdue loan |
+| `BOOK_NOT_FOUND` | Book ID does not exist |
+| `BOOK_OUT_OF_STOCK` | Book has 0 available copies |
+| `DUPLICATE_ACTIVE_LOAN` | Member is already borrowing the same book |
+
+### Book Return
+
+- Return date is always set to today (server time) — cannot be backdated
+- Late days = `max(0, returnDate - dueDate)`
+- Fine amount = `lateDays × FINE_PER_DAY` (default: Rp 1,000/day)
+- Available copies is incremented atomically within the same transaction
+- Returning an already-returned loan returns error `LOAN_ALREADY_RETURNED`
+
+### Overdue Status
+
+`OVERDUE` is not stored in the database. A loan is considered overdue when:
+
+```
+status = 'BORROWED' AND dueDate < today
+```
+
+This is computed at query time, ensuring accuracy without scheduled jobs.
+
+### Data Protection
+
+- Books cannot be deleted if they have any loan records (`ON DELETE RESTRICT`)
+- Members cannot be deleted if they have any loan records (`ON DELETE RESTRICT`)
+- Deleting a book or member with existing loans returns error `RESOURCE_HAS_ACTIVE_LOANS`
+
+---
+
+## Assumptions
+
+The following assumptions were made during development:
+
+| # | Assumption |
+|---|-----------|
+| A-1 | Maximum active loans per member: **3 books** |
+| A-2 | Loan duration: **14 days** from borrow date |
+| A-3 | Late fee: **Rp 1,000 per day** |
+| A-4 | `OVERDUE` status is **computed at query time** (not stored) — a loan is overdue when `status = BORROWED AND dueDate < today` |
+| A-5 | A member cannot borrow the same book twice simultaneously (`DUPLICATE_ACTIVE_LOAN`) |
+| A-6 | Books and members use **hard delete** with foreign key protection (cannot delete if any loans exist) |
+| A-7 | ISBN must be unique across all books |
+| A-8 | Due date is automatically calculated (borrower cannot set it manually) |
+| A-9 | Single role system — all authenticated users are "staff" (petugas) |
+| A-10 | Return date is always today (server time) — cannot be backdated |
+
+---
+
+## Design Decisions
+
+### 1. Computed Overdue Status (Not Stored)
+
+Instead of storing `OVERDUE` as a database enum value, overdue is calculated at query time. This eliminates the need for scheduled background jobs and ensures the status is always accurate without any maintenance overhead.
+
+### 2. Pessimistic Locking for Stock Management
+
+`SELECT FOR UPDATE` is used within transactions when creating loans. This prevents race conditions where two concurrent requests attempt to borrow the last copy of a book simultaneously. This is more reliable than optimistic locking for this write-heavy use case.
+
+### 3. All Violations Returned at Once
+
+When a loan is rejected, all applicable reasons are returned in the `errors` array, not just the first violation found. This provides a better user experience — staff can see and address all issues at once.
+
+### 4. Express 5 `req.query` Workaround
+
+Express 5 makes `req.query` read-only. Validated query parameters are passed via `res.locals.parsedQuery` from the validation middleware to controllers, avoiding the need to mutate the request object.
+
+### 5. Functional Controllers
+
+Controllers use exported functions instead of classes to avoid `this` binding issues with Express route handlers and improve TypeScript compatibility.
+
+### 6. Environment Validation at Startup
+
+All environment variables are parsed and validated by Zod when the server starts. Missing or invalid values cause an immediate, descriptive error rather than failing silently at runtime.
+
+### 7. Configurable Business Rules
+
+Key values like max loans (3), loan duration (14 days), and fine per day (Rp 1,000) are configurable via environment variables, not hardcoded. This makes the system adaptable without code changes.
+
+
+---
+
 ## Production Deployment
 
 The application is deployed on a self-hosted Linux server using Docker, accessible via Cloudflare Tunnel.
@@ -531,6 +706,8 @@ git pull origin main
 docker compose -f docker-compose.prod.yml --env-file backend/.env up -d --build
 ```
 
+---
+
 ## Known Limitations
 
 The following items are not yet implemented:
@@ -538,6 +715,78 @@ The following items are not yet implemented:
 - **Unit Tests**: Only loan service and date utility tests are implemented (30 tests). Integration tests and other service tests are not yet written
 - **Search debounce**: Search uses a submit button rather than real-time debounce on keystroke
 - **Soft delete**: Books and members use hard delete (with foreign key protection) rather than soft delete
+
+---
+
+## API Testing Guide
+
+### Swagger UI
+
+Swagger UI is available at:
+- **Local:** http://localhost:3001/api/docs
+- **Production:** https://habitus-api.ramadhaninursarjito.tech/api/docs
+
+**How to authorize:**
+
+**Step 1:** Open Swagger UI in your browser
+
+**Step 2:** Execute the login endpoint to get a token
+- Expand `POST /auth/login`
+- Click **Try it out**
+- Fill in the request body:
+  ```json
+  {
+    "username": "admin",
+    "password": "admin123"
+  }
+  ```
+- Click **Execute**
+- Copy the `token` value from the response
+
+**Step 3:** Authorize all endpoints
+- Click the **Authorize** button (lock icon) at the top right of the page
+- In the **Value** field, paste the token (without the word "Bearer"):
+  ```
+  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+  ```
+- Click **Authorize** then **Close**
+
+All endpoints will now use the token automatically (the lock icons will appear closed).
+
+---
+
+### Postman Collection
+
+The Postman collection is available at [`docs/postman_collection.json`](./docs/postman_collection.json).
+
+**How to import and use:**
+
+**Step 1:** Open Postman
+
+**Step 2:** Import the collection
+- Click **Import** (top left)
+- Select file: `docs/postman_collection.json`
+- Click **Import**
+
+**Step 3:** Get a token automatically
+- Open folder **A. Authentication**
+- Run the **Login** request
+- The token is automatically saved to the `{{token}}` collection variable via a test script
+
+**Step 4:** Use all other endpoints
+- All protected endpoints already use `Bearer {{token}}` — no manual setup needed
+- Replace `:id` path variables with actual UUIDs from the list endpoints
+
+**Collection variables:**
+
+| Variable | Default Value | Description |
+|----------|--------------|-------------|
+| `baseUrl` | `https://habitus-api.ramadhaninursarjito.tech/api/v1` | API base URL |
+| `token` | *(empty — auto-filled after login)* | JWT token |
+
+> To test locally, change `baseUrl` to `http://localhost:3001/api/v1` in the collection variables.
+
+---
 
 ## AI Assistance Disclosure
 

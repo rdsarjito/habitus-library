@@ -111,8 +111,8 @@ export default function ReturnsPage() {
     setReturnLoading(true);
     try {
       const res = await loansApi.returnLoan(returnLoan.id);
-      const lateDays = (res.data as unknown as { lateDays?: number })?.lateDays ?? 0;
-      const fineAmount = (res.data as unknown as { fineAmount?: string })?.fineAmount ?? '0';
+      const lateDays = res.data?.lateDays ?? 0;
+      const fineAmount = res.data?.fineAmount ?? 0;
       if (lateDays > 0) {
         toast.warning(
           `Buku dikembalikan terlambat ${lateDays} hari. Denda: Rp ${Number(fineAmount).toLocaleString('id-ID')}`

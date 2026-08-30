@@ -59,11 +59,14 @@ A full-stack web application for managing library books, members, and loan trans
 
 ### Stack Rationale
 
-- **Express.js** over NestJS/Fastify: simpler setup, widely understood, sufficient for this scope.
-- **Prisma** over raw SQL/Knex: type-safe queries, auto-generated types, migration management.
-- **Zustand** over Redux/Context: minimal boilerplate for auth-only state management.
-- **shadcn/ui** over Material UI/Ant Design: composable components with full control over styling.
-- **Zod** for both frontend and backend validation: single schema definition, runtime type safety.
+- **Express.js v5** over NestJS/Fastify — NestJS decorators and DI are overkill for this scope; Fastify wins on throughput but Express has the largest middleware ecosystem. v5 adds native async error handling, eliminating the need for `express-async-errors`.
+- **Prisma v6** over TypeORM/Knex/raw SQL — Declarative schema-as-code, auto-generated TypeScript types, and integrated migrations. Unlike TypeORM, Prisma guarantees type-safety between schema and query results. For complex queries, `$queryRaw` is still available.
+- **PostgreSQL** over MySQL/SQLite — Native UUID generation, case-insensitive search (`ILIKE`), transactional DDL, and reliable concurrency for Docker deployments where SQLite falls short.
+- **Next.js v16** over Vite + React Router — File-based routing, built-in SSR/SSG, and production optimizations (code splitting, image optimization) without extra config. Provides a scalable foundation if the project grows (e.g., public-facing catalog with SEO).
+- **Zustand** over Redux Toolkit/Context — The only global state needed is auth. Redux's `createSlice` + `configureStore` boilerplate is disproportionate. Context works but causes unnecessary re-renders. Zustand provides selector-based subscriptions with minimal API surface.
+- **shadcn/ui** over MUI/Ant Design — Components are copied into the project (not installed as a dependency), giving full ownership over source code. Critical for matching a custom design language (maroon `#8d1231`, glassmorphism) without fighting framework theming.
+- **Zod** over Joi/Yup — TypeScript-first with `z.infer<typeof schema>` for zero duplication between runtime validation and compile-time types. Joi lacks native TS inference; Yup is more verbose for the same results.
+- **Recharts** over Chart.js — Declarative React component API built on D3.js. Lighter and easier to style than Chart.js which requires an additional React wrapper.
 
 
 ---

@@ -9,6 +9,7 @@ import {
   Users,
   ArrowLeftRight,
   Library,
+  RotateCcw,
   X,
 } from 'lucide-react';
 
@@ -17,6 +18,7 @@ const navItems = [
   { href: '/dashboard/books', label: 'Buku', icon: BookOpen },
   { href: '/dashboard/members', label: 'Anggota', icon: Users },
   { href: '/dashboard/loans', label: 'Peminjaman', icon: ArrowLeftRight },
+  { href: '/dashboard/returns', label: 'Pengembalian', icon: RotateCcw },
 ];
 
 interface SidebarProps {

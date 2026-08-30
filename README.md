@@ -4,7 +4,9 @@
 > 
 > **📡 API Health:** [habitus-api.ramadhaninursarjito.tech/api/health](https://habitus-api.ramadhaninursarjito.tech/api/health)
 > 
-> **📖 API Documentation:** [docs/API.md](./docs/API.md)
+> **📖 API Documentation (Swagger UI):** [habitus-api.ramadhaninursarjito.tech/api/docs](https://habitus-api.ramadhaninursarjito.tech/api/docs)
+> 
+> **📄 API Documentation (Markdown):** [docs/API.md](./docs/API.md)
 
 A full-stack web application for managing library books, members, and loan transactions. Built as a take-home assessment project demonstrating clean architecture, business logic implementation, and modern web development practices.
 
@@ -260,7 +262,9 @@ All environment variables are validated at startup using Zod. The server will no
 
 ## API Endpoints
 
-> 📖 **Full API Documentation with request/response examples:** [docs/API.md](./docs/API.md)
+> 📖 **Full API Documentation:**
+> - **Swagger UI (Interactive):** [habitus-api.ramadhaninursarjito.tech/api/docs](https://habitus-api.ramadhaninursarjito.tech/api/docs)
+> - **Markdown Reference:** [docs/API.md](./docs/API.md)
 
 All endpoints are prefixed with `/api/v1`. Protected endpoints require a JWT token in the `Authorization: Bearer <token>` header.
 

@@ -12,6 +12,220 @@
 
 A full-stack web application for managing library books, members, and loan transactions. Built as a take-home assessment project demonstrating clean architecture, business logic implementation, and modern web development practices.
 
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Architecture Overview](#architecture-overview)
+- [Database Design](#database-design)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [API Endpoints](#api-endpoints)
+- [Business Rules](#business-rules)
+- [Assumptions](#assumptions)
+- [Design Decisions](#design-decisions)
+- [Running with Docker](#running-with-docker)
+- [Production Deployment](#production-deployment)
+- [Known Limitations](#known-limitations)
+- [AI Assistance Disclosure](#ai-assistance-disclosure)
+
+## Tech Stack
+
+### Backend
+| Technology | Purpose |
+|-----------|---------|
+| [Node.js](https://nodejs.org/) + [TypeScript](https://www.typescriptlang.org/) | Runtime and type safety |
+| [Express.js 5](https://expressjs.com/) | HTTP framework |
+| [PostgreSQL](https://www.postgresql.org/) | Relational database |
+| [Prisma 6](https://www.prisma.io/) | ORM with type-safe queries and migrations |
+| [Zod](https://zod.dev/) | Runtime schema validation for inputs and environment |
+| [jsonwebtoken](https://github.com/auth0/node-jsonwebtoken) | Authentication tokens |
+| [bcryptjs](https://github.com/dcodeIO/bcrypt.js) | Password hashing |
+
+### Frontend
+| Technology | Purpose |
+|-----------|---------|
+| [Next.js 16](https://nextjs.org/) | React framework (App Router) |
+| [Tailwind CSS 4](https://tailwindcss.com/) | Utility-first styling |
+| [shadcn/ui](https://ui.shadcn.com/) | Pre-built accessible UI components |
+| [Zustand](https://zustand-demo.pmnd.rs/) | Lightweight auth state management |
+| [Axios](https://axios-http.com/) | HTTP client with interceptors |
+| [TanStack React Query](https://tanstack.com/query) | Server state and caching |
+| [Lucide React](https://lucide.dev/) | Icon library |
+
+### Stack Rationale
+
+- **Express.js** over NestJS/Fastify: simpler setup, widely understood, sufficient for this scope.
+- **Prisma** over raw SQL/Knex: type-safe queries, auto-generated types, migration management.
+- **Zustand** over Redux/Context: minimal boilerplate for auth-only state management.
+- **shadcn/ui** over Material UI/Ant Design: composable components with full control over styling.
+- **Zod** for both frontend and backend validation: single schema definition, runtime type safety.
+
+
+## Architecture Overview
+
+### Application Architecture
+
+```
++------------------+         HTTPS          +------------------+
+|                  | ----------------------> |                  |
+|   Next.js 16     |    REST API (/api/v1)   |   Express.js 5   |
+|   (Frontend)     | <---------------------- |   (Backend)      |
+|   Port 3000      |     JSON Responses      |   Port 3001      |
+|                  |                         |                  |
++------------------+                         +--------+---------+
+                                                      |
+                                                      | Prisma ORM
+                                                      |
+                                             +--------v---------+
+                                             |                  |
+                                             |  PostgreSQL 16   |
+                                             |  (Database)      |
+                                             |  Port 5432       |
+                                             |                  |
+                                             +------------------+
+```
+
+### Backend Layer Architecture
+
+```
+HTTP Request
+     |
+     v
++----+-------+
+|   Routes   |  Route definitions, middleware chain
++----+-------+
+     |
+     v
++----+-------+
+| Middleware |  Auth (JWT verify), Input Validation (Zod)
++----+-------+
+     |
+     v
++----+-------+
+| Controller |  Parse request, call service, format response
++----+-------+
+     |
+     v
++----+-------+
+|  Service   |  Business logic, validation rules, transactions
++----+-------+
+     |
+     v
++----+----------+
+|  Repository  |  Prisma queries, database operations
++----+----------+
+     |
+     v
++----+----------+
+|  PostgreSQL  |  Data persistence
++--------------+
+```
+
+### Request Flow Example — Borrow a Book
+
+```
+POST /api/v1/loans
+     |
+     +--> Auth Middleware       (verify JWT token)
+     |
+     +--> Validation Middleware (Zod schema check: memberId, bookId required)
+     |
+     +--> LoanController.create()
+     |
+     +--> LoanService.createLoan()
+     |      |
+     |      +--> Check: member exists & ACTIVE        -> MEMBER_INACTIVE
+     |      +--> Check: active loans < MAX (3)        -> MEMBER_MAX_LOANS_REACHED
+     |      +--> Check: no overdue loans              -> MEMBER_HAS_OVERDUE
+     |      +--> Check: book in stock                 -> BOOK_OUT_OF_STOCK
+     |      +--> Check: no duplicate active loan      -> DUPLICATE_ACTIVE_LOAN
+     |      |
+     |      +--> (all checks pass)
+     |      |
+     |      +--> BEGIN TRANSACTION
+     |             SELECT book FOR UPDATE (pessimistic lock)
+     |             INSERT loan record
+     |             UPDATE book.availableCopies - 1
+     |           COMMIT
+     |
+     +--> 201 Created { success: true, data: { loan } }
+```
+
+
+## Database Design
+
+The system uses **4 tables** to manage the full library operation lifecycle:
+
+```mermaid
+erDiagram
+    users {
+        uuid id PK
+        varchar(50) username UK
+        varchar(255) password
+        varchar(255) name
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    books {
+        uuid id PK
+        varchar(255) title
+        varchar(255) author
+        varchar(13) isbn UK
+        varchar(255) publisher
+        int year_published
+        varchar(100) category
+        int total_copies
+        int available_copies
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    members {
+        uuid id PK
+        varchar(50) member_number UK
+        varchar(255) name
+        varchar(255) email UK
+        varchar(20) phone
+        enum status "ACTIVE|INACTIVE"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    loans {
+        uuid id PK
+        uuid member_id FK
+        uuid book_id FK
+        date loan_date
+        date due_date
+        date return_date "nullable"
+        enum status "BORROWED|RETURNED"
+        int late_days
+        decimal(10_2) fine_amount "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    members ||--o{ loans : "borrows"
+    books ||--o{ loans : "borrowed via"
+```
+
+### Design Decisions
+
+1. **`OVERDUE` is not stored as a status** — A loan is considered overdue when `status = BORROWED AND due_date < today`. This is computed at query time rather than stored, eliminating the need for scheduled background jobs and ensuring the status is always accurate.
+
+2. **`available_copies` tracked separately from `total_copies`** — When a loan is created, `available_copies` is decremented; on return, it is incremented. Both operations use `SELECT FOR UPDATE` within a database transaction to prevent race conditions when multiple staff process loans concurrently.
+
+3. **`ON DELETE RESTRICT` on loans foreign keys** — Books and members cannot be deleted if they have existing loan records. This preserves transaction history and prevents orphaned loan records.
+
+4. **Indexes for common query patterns** — Three composite indexes are defined on the `loans` table: `(member_id, status)` for member loan lookups, `(book_id, status)` for book availability checks, and `(status, due_date)` for overdue detection queries.
+
+5. **UUID primary keys** — All tables use UUID (`@default(uuid())`) instead of auto-increment integers to prevent ID enumeration attacks and allow future distributed system migrations.
+
+---
+
 ## Features
 
 ### Backend
@@ -27,7 +241,8 @@ A full-stack web application for managing library books, members, and loan trans
 - **Dashboard** — Real-time statistics cards with data from backend API
 - **Books Page** — Data table with search, category filter, pagination, and CRUD dialogs
 - **Members Page** — Data table with search, status filter, pagination, and CRUD dialogs
-- **Loans Page** — Loan creation, return with fine display, status filtering
+- **Loans Page** — Loan history with status filter and borrow dialog
+- **Returns Page** — Dedicated page for processing book returns with overdue highlighting
 
 ### Cross-Cutting
 - Consistent API response envelope (`success`, `message`, `data`, `meta`, `errors`)
@@ -36,38 +251,6 @@ A full-stack web application for managing library books, members, and loan trans
 - Delete confirmation dialogs
 - Server-side input validation (Zod) with field-level error display
 - Environment-based configuration with validation
-
-## Tech Stack
-
-### Backend
-| Technology | Purpose |
-|-----------|---------|
-| **Node.js + TypeScript** | Runtime and type safety |
-| **Express.js 5** | HTTP framework |
-| **PostgreSQL** | Relational database |
-| **Prisma 6** | ORM with type-safe queries and migrations |
-| **Zod** | Runtime schema validation for inputs and environment |
-| **JWT (jsonwebtoken)** | Authentication tokens |
-| **bcryptjs** | Password hashing |
-
-### Frontend
-| Technology | Purpose |
-|-----------|---------|
-| **Next.js 16** | React framework (App Router) |
-| **Tailwind CSS 4** | Utility-first styling |
-| **shadcn/ui** | Pre-built accessible UI components |
-| **Zustand** | Lightweight auth state management |
-| **Axios** | HTTP client with interceptors |
-| **TanStack React Query** | Server state and caching |
-| **Lucide React** | Icon library |
-
-### Stack Rationale
-
-- **Express.js** over NestJS/Fastify: simpler setup, widely understood, sufficient for this scope.
-- **Prisma** over raw SQL/Knex: type-safe queries, auto-generated types, migration management.
-- **Zustand** over Redux/Context: minimal boilerplate for auth-only state management.
-- **shadcn/ui** over Material UI/Ant Design: composable components with full control over styling.
-- **Zod** for both frontend and backend validation: single schema definition, runtime type safety.
 
 ## Project Structure
 
@@ -115,343 +298,121 @@ habitus-library/
 - **Services** contain all business logic and validation rules.
 - **Repositories** encapsulate database queries and transactions.
 
-## Prerequisites
-
-- **Node.js** >= 18
-- **PostgreSQL** >= 14
-- **npm** (comes with Node.js)
-
 ## Getting Started
 
-### 1. Clone the Repository
+### Prerequisites
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| Node.js | v18+ | Only needed for local setup |
+| npm | v9+ | Comes with Node.js |
+| PostgreSQL | v14+ | Only needed for local setup (not Docker) |
+| Docker | latest | Required for Docker setup |
+| Docker Compose | v2+ | Required for Docker setup |
+
+---
+
+### Option A: Docker (Recommended)
+
+The easiest way to run the application. Docker will spin up PostgreSQL, the backend API, and the frontend automatically.
+
+**Step 1: Clone the repository**
 
 ```bash
 git clone https://github.com/rdsarjito/habitus-library.git
 cd habitus-library
 ```
 
-### 2. Setup Backend
+**Step 2: Configure environment variables**
+
+```bash
+cp .env.example .env
+```
+
+The default `.env` values are already configured to work with Docker out of the box:
+
+```env
+POSTGRES_USER=library_user
+POSTGRES_PASSWORD=library_pass
+POSTGRES_DB=library_db
+JWT_SECRET=change-me-in-production-min10
+NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+```
+
+**Step 3: Start all containers**
+
+```bash
+docker compose up --build
+```
+
+This starts 3 containers:
+- `db` — PostgreSQL database on port `5432`
+- `backend` — Express API on port `3001`
+- `frontend` — Next.js app on port `3000`
+
+On first startup, the backend automatically runs migrations and seeds sample data (16 books, 6 members).
+
+**Step 4: Access the application**
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:3001 |
+| API Docs (Swagger) | http://localhost:3001/api/docs |
+| Health Check | http://localhost:3001/api/health |
+
+Login with: **admin** / **admin123**
+
+---
+
+### Option B: Local Development (Without Docker)
+
+**Step 1: Clone the repository**
+
+```bash
+git clone https://github.com/rdsarjito/habitus-library.git
+cd habitus-library
+```
+
+**Step 2: Setup Backend**
 
 ```bash
 cd backend
 cp .env.example .env
-```
-
-Edit `.env` with your PostgreSQL credentials:
-
-```env
-DATABASE_URL=postgresql://youruser:yourpassword@localhost:5432/library_db
-JWT_SECRET=your-secret-key-min-10-chars
-```
-
-Install dependencies:
-
-```bash
+# Edit .env and fill in your local PostgreSQL connection
 npm install
 ```
 
-### 3. Database Setup
-
-Create the PostgreSQL database:
+**Step 3: Run database migrations and seed**
 
 ```bash
-createdb library_db
+npx prisma migrate deploy
+npm run seed
 ```
 
-Run migrations:
-
-```bash
-npx prisma migrate dev
-```
-
-Seed the database with sample data:
-
-```bash
-npm run db:seed
-```
-
-The seeder creates:
-- **1 admin user** — username: `admin`, password: `admin123`
-- **16 books** across 6 categories (Programming, Fiction, Science, History, Business, Self-Help)
-- **6 members** — 5 active, 1 inactive (for testing business rules)
-- **8 loan transactions** — active, overdue, and returned (for testing various scenarios)
-
-Edge cases included in seed data:
-- 1 member with 3 active loans (at maximum limit)
-- 1 member with an overdue book
-- 1 inactive member
-- 1 book with 0 available copies
-
-### 4. Start Backend Server
+**Step 4: Start the backend**
 
 ```bash
 npm run dev
+# Backend running at http://localhost:3001
 ```
 
-The server starts at `http://localhost:3001`. Verify with:
+**Step 5: Setup Frontend**
 
 ```bash
-curl http://localhost:3001/api/health
-```
-
-API documentation (Swagger UI) is available at `http://localhost:3001/api/docs`.
-
-### 5. Setup Frontend
-
-Open a new terminal:
-
-```bash
-cd frontend
+cd ../frontend
 cp .env.example .env.local
+# Edit .env.local: set NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 npm install
 npm run dev
+# Frontend running at http://localhost:3000
 ```
 
-The frontend starts at `http://localhost:3000`.
+**Step 6: Login**
 
-### 6. Login
+Open http://localhost:3000 and login with **admin** / **admin123**
 
-Open `http://localhost:3000` in your browser. Use the demo credentials:
-
-- **Username**: `admin`
-- **Password**: `admin123`
-
-## Environment Variables
-
-### Backend (`backend/.env`)
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `DATABASE_URL` | Yes | — | PostgreSQL connection string |
-| `JWT_SECRET` | Yes | — | Secret key for JWT signing (min 10 chars) |
-| `JWT_EXPIRES_IN` | No | `24h` | JWT token expiration |
-| `PORT` | No | `3001` | Server port |
-| `CORS_ORIGIN` | No | `http://localhost:3000` | Allowed CORS origin |
-| `NODE_ENV` | No | `development` | Environment mode |
-| `MAX_ACTIVE_LOANS` | No | `3` | Maximum active loans per member |
-| `LOAN_DURATION_DAYS` | No | `14` | Loan duration in days |
-| `FINE_PER_DAY` | No | `1000` | Late fine per day (in Rupiah) |
-
-All environment variables are validated at startup using Zod. The server will not start if required variables are missing or invalid.
-
-### Frontend (`frontend/.env.local`)
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `NEXT_PUBLIC_API_URL` | No | `http://localhost:3001/api/v1` | Backend API base URL |
-
-## Available Scripts
-
-### Backend
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with hot reload |
-| `npm run build` | Compile TypeScript to JavaScript |
-| `npm start` | Start production server |
-| `npm run db:migrate` | Run Prisma migrations |
-| `npm run db:seed` | Seed database with sample data |
-| `npm run db:reset` | Reset database (drop all data + re-migrate + re-seed) |
-| `npm run db:studio` | Open Prisma Studio (database GUI) |
-
-### Frontend
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start Next.js development server |
-| `npm run build` | Build for production |
-| `npm start` | Start production server |
-
-## API Endpoints
-
-> **Full API Documentation:**
-> - **Swagger UI (Interactive):** [habitus-api.ramadhaninursarjito.tech/api/docs](https://habitus-api.ramadhaninursarjito.tech/api/docs)
-> - **Markdown Reference:** [docs/API.md](./docs/API.md)
-
-All endpoints are prefixed with `/api/v1`. Protected endpoints require a JWT token in the `Authorization: Bearer <token>` header.
-
-### Authentication
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/auth/login` | No | Login with username and password |
-| `GET` | `/auth/profile` | Yes | Get current user profile |
-
-### Books
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `GET` | `/books` | Yes | List books (search, filter, sort, paginate) |
-| `GET` | `/books/categories` | Yes | List distinct book categories |
-| `GET` | `/books/:id` | Yes | Get book by ID |
-| `POST` | `/books` | Yes | Create a new book |
-| `PUT` | `/books/:id` | Yes | Update a book |
-| `DELETE` | `/books/:id` | Yes | Delete a book (restricted if has loans) |
-
-**Query parameters for `GET /books`:**
-- `search` — Search by title, author, or ISBN (case-insensitive)
-- `category` — Filter by category
-- `page`, `perPage` — Pagination (default: page=1, perPage=10)
-- `sort`, `order` — Sorting (e.g., `sort=title&order=asc`)
-
-### Members
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `GET` | `/members` | Yes | List members (search, filter, sort, paginate) |
-| `GET` | `/members/:id` | Yes | Get member by ID |
-| `POST` | `/members` | Yes | Create a new member |
-| `PUT` | `/members/:id` | Yes | Update a member |
-| `DELETE` | `/members/:id` | Yes | Delete a member (restricted if has loans) |
-
-**Query parameters for `GET /members`:**
-- `search` — Search by name, member number, or email
-- `status` — Filter by `ACTIVE` or `INACTIVE`
-- `page`, `perPage`, `sort`, `order` — Pagination and sorting
-
-### Loans
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `GET` | `/loans` | Yes | List loans (filter by status, member) |
-| `GET` | `/loans/:id` | Yes | Get loan by ID |
-| `POST` | `/loans` | Yes | Create a new loan (borrow a book) |
-| `PATCH` | `/loans/:id/return` | Yes | Return a borrowed book |
-
-**Query parameters for `GET /loans`:**
-- `status` — Filter by `BORROWED`, `OVERDUE`, or `RETURNED`
-- `memberId` — Filter by member ID
-- `page`, `perPage`, `sort`, `order` — Pagination and sorting
-
-### Dashboard
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `GET` | `/dashboard` | Yes | Get library statistics |
-
-## Business Rules
-
-### Loan Creation
-
-When a loan is created, the system validates **all** of the following rules and returns **all violations at once** (not just the first one):
-
-| Rule | Error Code | Description |
-|------|-----------|-------------|
-| Member must be active | `MEMBER_INACTIVE` | Inactive members cannot borrow books |
-| Maximum 3 active loans | `MEMBER_MAX_LOANS_REACHED` | Configurable via `MAX_ACTIVE_LOANS` env var |
-| No overdue books | `MEMBER_HAS_OVERDUE` | Members with overdue books must return them first |
-| Book must be in stock | `BOOK_OUT_OF_STOCK` | Available copies must be > 0 |
-| No duplicate active loan | `DUPLICATE_ACTIVE_LOAN` | Cannot borrow the same book twice |
-
-Stock updates (`availableCopies`) are performed within a database transaction using `SELECT FOR UPDATE` to prevent race conditions.
-
-### Book Return
-
-- **On-time return**: `lateDays = 0`, no fine
-- **Late return**: fine = `lateDays × FINE_PER_DAY` (default: Rp 1,000/day)
-- **Double return**: rejected with `LOAN_ALREADY_RETURNED` error
-- Stock is restored within the same database transaction
-
-### Overdue Status
-
-The `OVERDUE` status is **computed at query time**, not stored in the database. A loan is overdue when:
-- `status = BORROWED` AND `dueDate < today`
-
-This ensures status is always accurate without requiring scheduled jobs.
-
-### Data Protection
-
-- Books with existing loan records cannot be deleted (ON DELETE RESTRICT)
-- Members with existing loan records cannot be deleted (ON DELETE RESTRICT)
-- When updating `totalCopies`, the value cannot be less than currently borrowed copies
-
-## Assumptions
-
-The following assumptions were made during development:
-
-| # | Assumption |
-|---|-----------|
-| A-1 | Maximum active loans per member: **3 books** |
-| A-2 | Loan duration: **14 days** from borrow date |
-| A-3 | Late fee: **Rp 1,000 per day** |
-| A-4 | `OVERDUE` status is **computed at query time** (not stored) — a loan is overdue when `status = BORROWED AND dueDate < today` |
-| A-5 | A member cannot borrow the same book twice simultaneously (`DUPLICATE_ACTIVE_LOAN`) |
-| A-6 | Books and members use **hard delete** with foreign key protection (cannot delete if active loans exist) |
-| A-7 | ISBN must be unique across all books |
-| A-8 | Due date is automatically calculated (borrower cannot set it manually) |
-| A-9 | Single role system — all authenticated users are "staff" (petugas) |
-| A-10 | Return date is always today (server time) — cannot be backdated |
-
-## Design Decisions
-
-1. **Computed overdue status** — Instead of storing `OVERDUE` as a database enum, overdue is calculated at query time. This eliminates the need for scheduled jobs and ensures accuracy.
-
-2. **Pessimistic locking for stock** — `SELECT FOR UPDATE` within transactions prevents two concurrent requests from borrowing the last copy of a book. This is more reliable than optimistic locking for this use case.
-
-3. **All violations returned at once** — When a loan is rejected, all applicable reasons are returned in the `errors` array, not just the first violation found. This provides a better user experience.
-
-4. **Express 5 `req.query` workaround** — Express 5 makes `req.query` read-only. Validated query parameters are passed via `res.locals.parsedQuery` from the validation middleware to controllers.
-
-5. **Functional controllers** — Controllers use exported functions instead of classes to avoid `this` binding issues with Express route handlers and improve TypeScript compatibility.
-
-6. **Environment validation at startup** — All environment variables are parsed and validated by Zod when the server starts. Missing or invalid values cause an immediate, descriptive error rather than failing at runtime.
-
-7. **Configurable business rules** — Key values like max loans (3), loan duration (14 days), and fine per day (Rp 1,000) are configurable via environment variables, not hardcoded.
-
-## Running with Docker
-
-### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/) >= 20.10
-- [Docker Compose](https://docs.docker.com/compose/install/) >= 2.0
-
-### Quick Start
-
-```bash
-# Clone and enter the project
-git clone https://github.com/rdsarjito/habitus-library.git
-cd habitus-library
-
-# Copy environment file
-cp .env.example .env
-
-# Build and start all services
-docker compose up --build
-```
-
-This starts 3 services:
-- **PostgreSQL** at `localhost:5432`
-- **Backend API** at `http://localhost:3001`
-- **Frontend** at `http://localhost:3000`
-
-On first startup, the backend automatically runs database migrations and seeds sample data.
-
-Login with: **admin** / **admin123**
-
-### Run Migration & Seeder
-
-```bash
-# Migrations run automatically on container start via docker-entrypoint.sh
-# To run manually inside the container:
-docker compose exec backend npx prisma migrate deploy
-
-# Run seeder (development only — uses tsx)
-docker compose exec backend npm run seed
-
-# Reset database and re-seed
-docker compose down -v
-docker compose up --build
-```
-
-### Run Tests
-
-```bash
-# All tests (30 unit tests)
-cd backend && npm test
-
-# With coverage
-cd backend && npm run test:coverage
-```
+---
 
 ### Useful Commands
 
@@ -462,28 +423,18 @@ cd backend && npm run test:coverage
 | `docker compose down` | Stop all services |
 | `docker compose down -v` | Stop and remove database volume (reset data) |
 | `docker compose logs -f backend` | Follow backend logs |
-| `docker compose logs -f db` | Follow database logs |
+| `docker compose logs -f frontend` | Follow frontend logs |
 | `docker compose ps` | Show running containers |
 
-### Environment Configuration
-
-Copy `.env.example` to `.env` and edit as needed:
+### Run Tests
 
 ```bash
-cp .env.example .env
+# All unit tests (30 tests)
+cd backend && npm test
+
+# With coverage report
+cd backend && npm run test:coverage
 ```
-
-Key variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `POSTGRES_USER` | `library_user` | PostgreSQL username |
-| `POSTGRES_PASSWORD` | `library_pass` | PostgreSQL password |
-| `POSTGRES_DB` | `library_db` | Database name |
-| `JWT_SECRET` | `change-me-in-production-min10` | JWT signing secret |
-| `NEXT_PUBLIC_API_URL` | `http://localhost:3001/api/v1` | API URL for frontend |
-
-> **Note:** For production, always change `POSTGRES_PASSWORD` and `JWT_SECRET` to strong, unique values.
 
 ### Troubleshooting
 
@@ -501,8 +452,9 @@ Data is persisted in a Docker volume (`pgdata`). If you ran `docker compose down
 Stop any local dev servers, or change the port mapping in `docker-compose.yml`:
 ```yaml
 ports:
- - "3002:3001" # Map to different host port
+  - "3002:3001"  # Map to different host port
 ```
+
 
 ## Production Deployment
 

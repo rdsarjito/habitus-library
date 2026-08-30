@@ -367,6 +367,8 @@ Login with: **admin** / **admin123**
 
 ### Option B: Local Development (Without Docker)
 
+> **Prerequisites:** PostgreSQL must be installed and running locally.
+
 **Step 1: Clone the repository**
 
 ```bash
@@ -379,15 +381,33 @@ cd habitus-library
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env and fill in your local PostgreSQL connection
+```
+
+Open `.env` and update `DATABASE_URL` to match your local PostgreSQL credentials:
+
+```env
+# Format: postgresql://<username>:<password>@localhost:5432/<dbname>
+# Example (no password):
+DATABASE_URL=postgresql://your_pg_user@localhost:5432/library_db
+
+# Example (with password):
+DATABASE_URL=postgresql://your_pg_user:your_pg_password@localhost:5432/library_db
+```
+
+> **Note:** The default `.env.example` uses placeholder values. You must update `DATABASE_URL` with your actual PostgreSQL username. On macOS with Homebrew, the username is typically your system username (e.g., `rama`).
+
+```bash
 npm install
 ```
 
 **Step 3: Run database migrations and seed**
 
 ```bash
+# Create tables
 npx prisma migrate deploy
-npm run seed
+
+# Seed initial data (16 books, 6 members, admin user)
+npx prisma db seed
 ```
 
 **Step 4: Start the backend**
@@ -395,14 +415,25 @@ npm run seed
 ```bash
 npm run dev
 # Backend running at http://localhost:3001
+# Swagger UI at http://localhost:3001/api/docs
 ```
 
 **Step 5: Setup Frontend**
 
+Open a new terminal:
+
 ```bash
-cd ../frontend
+cd frontend
 cp .env.example .env.local
-# Edit .env.local: set NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+```
+
+Open `.env.local` and ensure this is set:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
+```
+
+```bash
 npm install
 npm run dev
 # Frontend running at http://localhost:3000

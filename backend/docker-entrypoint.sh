@@ -47,7 +47,33 @@ async function main() {
   ];
   await Promise.all(members.map(m => p.member.create({ data: m })));
 
-  console.log('  ✅ Admin user, 16 books, 6 members seeded');
+  // Create loans
+  const allBooks = await p.book.findMany();
+  const allMembers = await p.member.findMany();
+  const bk = (isbn) => allBooks.find(b => b.isbn === isbn);
+  const mb = (email) => allMembers.find(m => m.email === email);
+  const daysAgo = (d) => { const dt = new Date(); dt.setDate(dt.getDate() - d); dt.setHours(0,0,0,0); return dt; };
+  const daysFromNow = (d) => { const dt = new Date(); dt.setDate(dt.getDate() + d); dt.setHours(0,0,0,0); return dt; };
+
+  const loans = [
+    { memberId: mb('budi@email.com').id, bookId: bk('9780132350884').id, loanDate: daysAgo(10), dueDate: daysFromNow(4), status: 'BORROWED' },
+    { memberId: mb('budi@email.com').id, bookId: bk('9780201633610').id, loanDate: daysAgo(5), dueDate: daysFromNow(9), status: 'BORROWED' },
+    { memberId: mb('budi@email.com').id, bookId: bk('9780135957059').id, loanDate: daysAgo(3), dueDate: daysFromNow(11), status: 'BORROWED' },
+    { memberId: mb('siti@email.com').id, bookId: bk('9780596517748').id, loanDate: daysAgo(20), dueDate: daysAgo(6), status: 'BORROWED' },
+    { memberId: mb('agus@email.com').id, bookId: bk('9789793062792').id, loanDate: daysAgo(7), dueDate: daysFromNow(7), status: 'BORROWED' },
+    { memberId: mb('dewi@email.com').id, bookId: bk('9780062316097').id, loanDate: daysAgo(30), dueDate: daysAgo(16), returnDate: daysAgo(15), status: 'RETURNED', lateDays: 0, fineAmount: null },
+    { memberId: mb('dewi@email.com').id, bookId: bk('9780307887894').id, loanDate: daysAgo(25), dueDate: daysAgo(11), returnDate: daysAgo(6), status: 'RETURNED', lateDays: 5, fineAmount: 5000 },
+    { memberId: mb('ani@email.com').id, bookId: bk('9789799731234').id, loanDate: daysAgo(2), dueDate: daysFromNow(12), status: 'BORROWED' },
+  ];
+
+  for (const loan of loans) {
+    await p.loan.create({ data: { ...loan, lateDays: loan.lateDays ?? 0, fineAmount: loan.fineAmount ?? null } });
+    if (loan.status === 'BORROWED') {
+      await p.book.update({ where: { id: loan.bookId }, data: { availableCopies: { decrement: 1 } } });
+    }
+  }
+
+  console.log('  ✅ Admin user, 16 books, 6 members, 8 loans seeded');
 }
 
 main().catch(e => { console.error('Seed error:', e.message); }).finally(() => p.\$disconnect());

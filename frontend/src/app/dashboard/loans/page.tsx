@@ -184,6 +184,7 @@ export default function LoansPage() {
                 ))}
               </TableBody>
             </Table>
+              </div>
           )}
 
           {meta && meta.totalPages > 1 && (

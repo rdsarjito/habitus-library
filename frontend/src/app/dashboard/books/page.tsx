@@ -208,6 +208,7 @@ export default function BooksPage() {
                 ))}
               </TableBody>
             </Table>
+              </div>
           )}
 
           {/* Pagination */}

@@ -163,6 +163,7 @@ export default function MembersPage() {
                 ))}
               </TableBody>
             </Table>
+              </div>
           )}
 
           {meta && meta.totalPages > 1 && (

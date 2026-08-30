@@ -157,7 +157,7 @@ export default function ReturnsPage() {
                   <th>Tgl Pinjam</th>
                   <th>Jatuh Tempo</th>
                   <th>Status</th>
-                  <th className="text-right">Aksi</th>
+                  <th className="text-left">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -191,7 +191,7 @@ export default function ReturnsPage() {
                       <td>
                         <StatusBadge status={loan.displayStatus || loan.status} />
                       </td>
-                      <td className="text-right whitespace-nowrap">
+                      <td className="text-left whitespace-nowrap">
                         <button
                           onClick={() => {
                             setReturnLoan(loan);

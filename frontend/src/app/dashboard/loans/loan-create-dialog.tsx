@@ -42,11 +42,11 @@ export function LoanCreateDialog({ open, onOpenChange, onSuccess }: LoanCreateDi
     setFetchLoading(true);
     try {
       const [membersRes, booksRes] = await Promise.all([
-        membersApi.getAll({ perPage: 100, status: 'ACTIVE', sort: 'name', order: 'asc' }),
+        membersApi.getAll({ perPage: 100, sort: 'name', order: 'asc' }),
         booksApi.getAll({ perPage: 100, sort: 'title', order: 'asc' }),
       ]);
-      setMembers((membersRes.data || []).filter((m) => m.status === 'ACTIVE'));
-      setBooks((booksRes.data || []).filter((b) => b.availableCopies > 0));
+      setMembers(membersRes.data || []);
+      setBooks(booksRes.data || []);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -143,12 +143,18 @@ export function LoanCreateDialog({ open, onOpenChange, onSuccess }: LoanCreateDi
               <Label className="text-xs font-bold text-slate-700">Pilih Anggota</Label>
               <Select value={memberId} onValueChange={(val) => setMemberId(val || '')}>
                 <SelectTrigger className="rounded-xl border-slate-200 focus:border-[#8d1231] focus:ring-[#8d1231]/10 text-xs font-bold">
-                  <SelectValue placeholder="-- Pilih Anggota Peminjam --" />
+                  <SelectValue placeholder="-- Pilih Anggota Peminjam --">
+                    {(value: string | null) => {
+                      if (!value) return "-- Pilih Anggota Peminjam --";
+                      const member = members.find(m => m.id === value);
+                      return member ? `${member.name} (${member.memberNumber})` : value;
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-100 shadow-xl max-h-56">
                   {members.map((m) => (
-                    <SelectItem key={m.id} value={m.id} className="text-xs font-semibold">
-                      {m.name} ({m.memberNumber})
+                    <SelectItem key={m.id} value={m.id} className={`text-xs font-semibold ${m.status === 'INACTIVE' ? "text-red-400" : ""}`}>
+                      {m.name} ({m.memberNumber}){m.status === 'INACTIVE' && <span className="text-red-500 font-bold"> — Nonaktif</span>}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -159,12 +165,18 @@ export function LoanCreateDialog({ open, onOpenChange, onSuccess }: LoanCreateDi
               <Label className="text-xs font-bold text-slate-700">Pilih Judul Buku</Label>
               <Select value={bookId} onValueChange={(val) => setBookId(val || '')}>
                 <SelectTrigger className="rounded-xl border-slate-200 focus:border-[#8d1231] focus:ring-[#8d1231]/10 text-xs font-bold">
-                  <SelectValue placeholder="-- Pilih Buku yang Tersedia --" />
+                  <SelectValue placeholder="-- Pilih Buku yang Tersedia --">
+                    {(value: string | null) => {
+                      if (!value) return "-- Pilih Buku yang Tersedia --";
+                      const book = books.find((b: Book) => b.id === value);
+                      return book ? `${book.title} (Stok: ${book.availableCopies})` : value;
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-100 shadow-xl max-h-56">
                   {books.map((b) => (
-                    <SelectItem key={b.id} value={b.id} className="text-xs font-semibold">
-                      {b.title} (Stok: {b.availableCopies})
+                    <SelectItem key={b.id} value={b.id} className={`text-xs font-semibold ${b.availableCopies === 0 ? "text-red-400" : ""}`}>
+                      {b.title} {b.availableCopies === 0 ? <span className="text-red-500 font-bold">— Stok Habis</span> : `(Stok: ${b.availableCopies})`}
                     </SelectItem>
                   ))}
                 </SelectContent>

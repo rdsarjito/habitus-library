@@ -129,13 +129,22 @@ export default function MembersPage() {
         onReset={handleReset}
         isLoading={loading}
       >
-        <div className="w-full sm:w-48">
+        <div className="w-full sm:w-56">
           <Select
             value={query.status || 'all'}
             onValueChange={(val) => handleStatusChange(val || "all")}
           >
             <SelectTrigger className="w-full h-10 rounded-xl bg-white border-slate-200/80 text-xs font-bold text-slate-700">
-              <SelectValue placeholder="Semua Status" />
+              <SelectValue placeholder="Semua Status">
+                {(value: string | null) => {
+                  const labels: Record<string, string> = {
+                    all: "Semua Status",
+                    ACTIVE: "Aktif",
+                    INACTIVE: "Nonaktif",
+                  };
+                  return labels[value || "all"] || "Semua Status";
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="rounded-xl border-slate-100 shadow-xl">
               <SelectItem value="all" className="text-xs font-semibold">Semua Status</SelectItem>
@@ -145,7 +154,7 @@ export default function MembersPage() {
           </Select>
         </div>
 
-        <div className="w-full sm:w-48">
+        <div className="w-full sm:w-56">
           <Select
             value={`${query.sort}-${query.order}`}
             onValueChange={(val) => {
@@ -155,7 +164,17 @@ export default function MembersPage() {
             }}
           >
             <SelectTrigger className="w-full h-10 rounded-xl bg-white border-slate-200/80 text-xs font-bold text-slate-700">
-              <SelectValue placeholder="Urutan" />
+              <SelectValue placeholder="Urutan">
+                {(value: string | null) => {
+                  const labels: Record<string, string> = {
+                    "createdAt-desc": "Terbaru Terdaftar",
+                    "name-asc": "Nama (A-Z)",
+                    "name-desc": "Nama (Z-A)",
+                    "memberNumber-asc": "No. Anggota (Naik)",
+                  };
+                  return labels[value || "createdAt-desc"] || "Urutan";
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="rounded-xl border-slate-100 shadow-xl">
               <SelectItem value="createdAt-desc" className="text-xs font-semibold">Terbaru Terdaftar</SelectItem>
@@ -195,7 +214,7 @@ export default function MembersPage() {
                   <th>No. Telepon</th>
                   <th>Status</th>
                   <th>Terdaftar</th>
-                  <th className="text-right">Aksi</th>
+                  <th className="text-left">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -238,8 +257,8 @@ export default function MembersPage() {
                           year: 'numeric',
                         })}
                       </td>
-                      <td className="text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="text-left whitespace-nowrap">
+                        <div className="flex items-center justify-start gap-1.5">
                           <button
                             onClick={() => handleEdit(member)}
                             className="p-2 rounded-xl text-slate-400 hover:text-[#8d1231] hover:bg-red-50 transition-all cursor-pointer"

@@ -171,7 +171,15 @@ export function MemberFormDialog({ open, onOpenChange, member, onSuccess }: Memb
                 <Label className="text-xs font-bold text-slate-700">Status Keanggotaan</Label>
                 <Select value={form.status} onValueChange={(val) => handleChange('status', val || 'ACTIVE')}>
                   <SelectTrigger className="rounded-xl border-slate-200 focus:border-[#8d1231] focus:ring-[#8d1231]/10 text-xs font-bold">
-                    <SelectValue />
+                    <SelectValue placeholder="Pilih Status">
+                      {(value: string | null) => {
+                        const labels: Record<string, string> = {
+                          ACTIVE: "Aktif",
+                          INACTIVE: "Nonaktif",
+                        };
+                        return labels[value || ""] || "Pilih Status";
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                     <SelectItem value="ACTIVE" className="text-xs font-bold text-emerald-700">

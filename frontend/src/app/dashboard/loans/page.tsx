@@ -171,7 +171,17 @@ export default function LoansPage() {
             onValueChange={(val) => handleStatusFilter(val || "all")}
           >
             <SelectTrigger className="w-full h-10 rounded-xl bg-white border-slate-200/80 text-xs font-bold text-slate-700">
-              <SelectValue placeholder="Semua Status Transaksi" />
+              <SelectValue placeholder="Semua Status Transaksi">
+                {(value: string | null) => {
+                  const labels: Record<string, string> = {
+                    all: "Semua Status",
+                    BORROWED: "Dipinjam (Aktif)",
+                    OVERDUE: "Terlambat (Overdue)",
+                    RETURNED: "Dikembalikan (Selesai)",
+                  };
+                  return labels[value || "all"] || "Semua Status Transaksi";
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="rounded-xl border-slate-100 shadow-xl">
               <SelectItem value="all" className="text-xs font-semibold">Semua Status</SelectItem>
@@ -192,7 +202,17 @@ export default function LoansPage() {
             }}
           >
             <SelectTrigger className="w-full h-10 rounded-xl bg-white border-slate-200/80 text-xs font-bold text-slate-700">
-              <SelectValue placeholder="Urutan" />
+              <SelectValue placeholder="Urutan">
+                {(value: string | null) => {
+                  const labels: Record<string, string> = {
+                    "createdAt-desc": "Terbaru Dibuat",
+                    "dueDate-asc": "Jatuh Tempo Terdekat",
+                    "dueDate-desc": "Jatuh Tempo Terjauh",
+                    "loanDate-desc": "Tanggal Pinjam",
+                  };
+                  return labels[value || "createdAt-desc"] || "Urutan";
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="rounded-xl border-slate-100 shadow-xl">
               <SelectItem value="createdAt-desc" className="text-xs font-semibold">Terbaru Dibuat</SelectItem>
@@ -232,7 +252,7 @@ export default function LoansPage() {
                   <th>Jatuh Tempo</th>
                   <th>Status</th>
                   <th>Denda</th>
-                  <th className="text-right">Aksi</th>
+                  <th className="text-left">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -274,7 +294,7 @@ export default function LoansPage() {
                           <span className="text-xs font-semibold text-slate-400">—</span>
                         )}
                       </td>
-                      <td className="text-right whitespace-nowrap">
+                      <td className="text-left whitespace-nowrap">
                         {!isReturned ? (
                           <button
                             onClick={() => handleReturnClick(loan)}

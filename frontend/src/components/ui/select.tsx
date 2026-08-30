@@ -22,7 +22,7 @@ function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
-      className={cn("flex flex-1 text-left truncate text-xs sm:text-sm font-bold text-slate-700", className)}
+      className={cn("flex flex-1 text-left text-xs sm:text-sm font-bold text-slate-700 whitespace-nowrap", className)}
       {...props}
     />
   )

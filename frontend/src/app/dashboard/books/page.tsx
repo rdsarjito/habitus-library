@@ -149,7 +149,13 @@ export default function BooksPage() {
             onValueChange={(val) => handleCategoryChange(val || "all")}
           >
             <SelectTrigger className="w-full h-10 rounded-xl bg-white border-slate-200/80 text-xs font-bold text-slate-700">
-              <SelectValue placeholder="Semua Kategori" />
+              <SelectValue placeholder="Semua Kategori">
+                {(value: string | null) => {
+                  const labels: Record<string, string> = { all: "Semua Kategori" };
+                  categories.forEach(cat => labels[cat] = cat);
+                  return labels[value || "all"] || "Semua Kategori";
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="rounded-xl border-slate-100 shadow-xl">
               <SelectItem value="all" className="text-xs font-semibold">Semua Kategori</SelectItem>
@@ -162,7 +168,7 @@ export default function BooksPage() {
           </Select>
         </div>
 
-        <div className="w-full sm:w-48">
+        <div className="w-full sm:w-56">
           <Select
             value={`${query.sort}-${query.order}`}
             onValueChange={(val) => {
@@ -172,7 +178,18 @@ export default function BooksPage() {
             }}
           >
             <SelectTrigger className="w-full h-10 rounded-xl bg-white border-slate-200/80 text-xs font-bold text-slate-700">
-              <SelectValue placeholder="Urutan" />
+              <SelectValue placeholder="Urutan">
+                {(value: string | null) => {
+                  const sortLabels: Record<string, string> = {
+                    "createdAt-desc": "Terbaru Ditambahkan",
+                    "title-asc": "Judul (A-Z)",
+                    "title-desc": "Judul (Z-A)",
+                    "yearPublished-desc": "Tahun Terbit (Baru)",
+                    "availableCopies-desc": "Stok Terbanyak",
+                  };
+                  return sortLabels[value || "createdAt-desc"] || "Urutan";
+                }}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="rounded-xl border-slate-100 shadow-xl">
               <SelectItem value="createdAt-desc" className="text-xs font-semibold">Terbaru Ditambahkan</SelectItem>
@@ -213,7 +230,7 @@ export default function BooksPage() {
                   <th>Kategori</th>
                   <th>Tahun</th>
                   <th>Stok</th>
-                  <th className="text-right">Aksi</th>
+                  <th className="text-left">Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -246,8 +263,8 @@ export default function BooksPage() {
                           {book.availableCopies} / {book.totalCopies}
                         </span>
                       </td>
-                      <td className="text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="text-left whitespace-nowrap">
+                        <div className="flex items-center justify-start gap-1.5">
                           <button
                             onClick={() => handleEdit(book)}
                             className="p-2 rounded-xl text-slate-400 hover:text-[#8d1231] hover:bg-red-50 transition-all cursor-pointer"

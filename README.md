@@ -1,14 +1,14 @@
-# 📚 Library Management System
+# Library Management System
 
-> **🔗 Live Demo:** [habitus.ramadhaninursarjito.tech](https://habitus.ramadhaninursarjito.tech) — Login: `admin` / `admin123` | CI/CD ✅
+> **Live Demo:** [habitus.ramadhaninursarjito.tech](https://habitus.ramadhaninursarjito.tech) — Login: `admin` / `admin123`
 > 
-> **📡 API Health:** [habitus-api.ramadhaninursarjito.tech/api/health](https://habitus-api.ramadhaninursarjito.tech/api/health)
+> **API Health:** [habitus-api.ramadhaninursarjito.tech/api/health](https://habitus-api.ramadhaninursarjito.tech/api/health)
 > 
-> **📖 API Documentation (Swagger UI):** [habitus-api.ramadhaninursarjito.tech/api/docs](https://habitus-api.ramadhaninursarjito.tech/api/docs)
+> **API Documentation (Swagger UI):** [habitus-api.ramadhaninursarjito.tech/api/docs](https://habitus-api.ramadhaninursarjito.tech/api/docs)
 > 
-> **📄 API Documentation (Markdown):** [docs/API.md](./docs/API.md)
+> **API Documentation (Markdown):** [docs/API.md](./docs/API.md)
 > 
-> **📮 Postman Collection:** [docs/postman_collection.json](./docs/postman_collection.json) — Import ke Postman, set variable `token` setelah login
+> **Postman Collection:** [docs/postman_collection.json](./docs/postman_collection.json) — Import ke Postman, set variable `token` setelah login
 
 A full-stack web application for managing library books, members, and loan transactions. Built as a take-home assessment project demonstrating clean architecture, business logic implementation, and modern web development practices.
 
@@ -74,38 +74,38 @@ A full-stack web application for managing library books, members, and loan trans
 ```
 habitus-library/
 ├── backend/
-│   ├── prisma/
-│   │   ├── schema.prisma          # Database schema (4 models, 2 enums)
-│   │   ├── seed.ts                # Seed data (16 books, 6 members, 8 loans)
-│   │   └── migrations/            # Prisma migration files
-│   └── src/
-│       ├── config/                # Database client, environment validation
-│       ├── controllers/           # HTTP request handlers (thin layer)
-│       ├── errors/                # Custom error classes (AppError hierarchy)
-│       ├── middlewares/           # Auth, validation, error handler
-│       ├── repositories/         # Database queries (Prisma operations)
-│       ├── routes/                # Express route definitions
-│       ├── services/              # Business logic layer
-│       ├── utils/                 # Helpers (date, pagination, response)
-│       ├── validators/            # Zod schemas for input validation
-│       ├── app.ts                 # Express app setup
-│       └── server.ts              # Server entry point
+│ ├── prisma/
+│ │ ├── schema.prisma # Database schema (4 models, 2 enums)
+│ │ ├── seed.ts # Seed data (16 books, 6 members, 8 loans)
+│ │ └── migrations/ # Prisma migration files
+│ └── src/
+│ ├── config/ # Database client, environment validation
+│ ├── controllers/ # HTTP request handlers (thin layer)
+│ ├── errors/ # Custom error classes (AppError hierarchy)
+│ ├── middlewares/ # Auth, validation, error handler
+│ ├── repositories/ # Database queries (Prisma operations)
+│ ├── routes/ # Express route definitions
+│ ├── services/ # Business logic layer
+│ ├── utils/ # Helpers (date, pagination, response)
+│ ├── validators/ # Zod schemas for input validation
+│ ├── app.ts # Express app setup
+│ └── server.ts # Server entry point
 ├── frontend/
-│   └── src/
-│       ├── app/                   # Next.js pages (App Router)
-│       │   ├── login/             # Login page
-│       │   └── dashboard/         # Protected pages
-│       │       ├── books/         # Books CRUD
-│       │       ├── members/       # Members CRUD
-│       │       └── loans/         # Loan management
-│       ├── components/
-│       │   ├── layout/            # Sidebar, Header, AppLayout
-│       │   ├── shared/            # Reusable components (DeleteDialog)
-│       │   └── ui/                # shadcn/ui components
-│       ├── lib/api/               # Axios client and API service functions
-│       ├── providers/             # React Query provider
-│       ├── stores/                # Zustand auth store
-│       └── types/                 # TypeScript type definitions
+│ └── src/
+│ ├── app/ # Next.js pages (App Router)
+│ │ ├── login/ # Login page
+│ │ └── dashboard/ # Protected pages
+│ │ ├── books/ # Books CRUD
+│ │ ├── members/ # Members CRUD
+│ │ └── loans/ # Loan management
+│ ├── components/
+│ │ ├── layout/ # Sidebar, Header, AppLayout
+│ │ ├── shared/ # Reusable components (DeleteDialog)
+│ │ └── ui/ # shadcn/ui components
+│ ├── lib/api/ # Axios client and API service functions
+│ ├── providers/ # React Query provider
+│ ├── stores/ # Zustand auth store
+│ └── types/ # TypeScript type definitions
 └── README.md
 ```
 
@@ -264,7 +264,7 @@ All environment variables are validated at startup using Zod. The server will no
 
 ## API Endpoints
 
-> 📖 **Full API Documentation:**
+> **Full API Documentation:**
 > - **Swagger UI (Interactive):** [habitus-api.ramadhaninursarjito.tech/api/docs](https://habitus-api.ramadhaninursarjito.tech/api/docs)
 > - **Markdown Reference:** [docs/API.md](./docs/API.md)
 
@@ -501,7 +501,7 @@ Data is persisted in a Docker volume (`pgdata`). If you ran `docker compose down
 Stop any local dev servers, or change the port mapping in `docker-compose.yml`:
 ```yaml
 ports:
-  - "3002:3001"  # Map to different host port
+ - "3002:3001" # Map to different host port
 ```
 
 ## Production Deployment
@@ -518,9 +518,9 @@ The application is deployed on a self-hosted Linux server using Docker, accessib
 
 ```
 Internet → Cloudflare (HTTPS) → Cloudflare Tunnel → Caddy (reverse proxy)
-                                                      ├─ habitus-frontend:3000
-                                                      └─ habitus-backend:3001
-                                                              └─ habitus-db:5432
+ ├─ habitus-frontend:3000
+ └─ habitus-backend:3001
+ └─ habitus-db:5432
 ```
 
 ### CI/CD

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth.store';
 import { dashboardApi, getErrorMessage } from '@/lib/api';
 import type { DashboardStats } from '@/types/api';
+import { BookStockChart, MemberStatusChart, LoanStatusChart } from '@/components/ui/dashboard-charts';
 import { PageHeader } from '@/components/ui/page-header';
 import { SummaryCards, type SummaryCardItem } from '@/components/ui/summary-cards';
 import {
@@ -112,6 +113,15 @@ export default function DashboardPage() {
 
       {/* Summary KPI Cards */}
       <SummaryCards items={summaryItems} loading={loading && !stats} />
+
+      {/* Charts Section */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <BookStockChart books={stats.books} />
+          <MemberStatusChart members={stats.members} />
+          <LoanStatusChart loans={stats.loans} />
+        </div>
+      )}
 
       {/* Extended Metrics & Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
